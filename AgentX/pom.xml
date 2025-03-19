@@ -40,12 +40,6 @@
             <artifactId>spring-boot-starter-validation</artifactId>
             <version>2.7.15</version>
         </dependency>
-        <!-- Spring WebFlux 依赖，用于SSE支持 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
-            <version>2.7.15</version>
-        </dependency>
 
         <!-- 日志依赖 -->
         <dependency>
@@ -65,7 +59,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
+            <scope>compile</scope>
         </dependency>
 
         <!-- JWT认证 -->
@@ -107,6 +101,18 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>2.7.15</version>
+                <configuration>
+                    <mainClass>org.xhy.AgentXApplication</mainClass>
+                    <layout>JAR</layout>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

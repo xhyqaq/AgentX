@@ -9,7 +9,7 @@ import org.xhy.application.conversation.dto.ChatRequest;
 import org.xhy.application.conversation.dto.ChatResponse;
 import org.xhy.application.conversation.dto.StreamChatRequest;
 import org.xhy.application.conversation.dto.StreamChatResponse;
-import org.xhy.application.conversation.service.ConversationService;
+import org.xhy.application.conversation.service.ConversationAppService;
 import org.xhy.interfaces.api.common.Result;
 
 import javax.annotation.Resource;
@@ -29,7 +29,7 @@ public class ConversationController {
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     @Resource
-    private ConversationService conversationService;
+    private ConversationAppService conversationAppService;
 
     /**
      * 普通聊天接口
@@ -50,7 +50,7 @@ public class ConversationController {
         }
 
         try {
-            ChatResponse response = conversationService.chat(request);
+            ChatResponse response = conversationAppService.chat(request);
             return Result.success(response);
         } catch (Exception e) {
             logger.error("处理聊天请求异常", e);
@@ -98,7 +98,7 @@ public class ConversationController {
         executorService.execute(() -> {
             try {
                 // 使用新的真正流式实现
-                conversationService.chatStream(request, (response, isLast) -> {
+                conversationAppService.chatStream(request, (response, isLast) -> {
                     try {
                         // 发送每个响应块到客户端
                         emitter.send(response);
@@ -151,15 +151,5 @@ public class ConversationController {
 
         // 调用POST方法处理
         return chatStream(request);
-    }
-
-    /**
-     * 健康检查接口
-     *
-     * @return 状态信息
-     */
-    @GetMapping("/health")
-    public Result<Object> health() {
-        return Result.success("服务正常运行中");
     }
 }
