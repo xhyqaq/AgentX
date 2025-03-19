@@ -1,7 +1,5 @@
 server:
   port: 8080
-  servlet:
-    context-path: /api
 
 spring:
   application:
@@ -11,8 +9,8 @@ spring:
     url: jdbc:postgresql://localhost:5432/agentx_test
     username: postgres
     password: postgres
-  
-  # MyBatis-Plus配置
+
+# MyBatis-Plus配置
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
   type-aliases-package: org.xhy.domain
