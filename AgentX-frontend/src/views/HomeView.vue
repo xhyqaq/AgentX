@@ -176,7 +176,7 @@ watch(() => chatStore.messages.length, (newLength) => {
             <div class="message-content" :class="{'message-content-updated': message.role === 'assistant' && message.content}">
               <template v-if="message.role === 'assistant' && chatStore.loading && index === chatStore.messages.length - 1">
                 <span>{{ message.content }}</span>
-                <span class="typing-cursor"></span>
+                <span class="typing-cursor" v-if="message.content.length > 0"></span>
               </template>
               <span v-else v-html="formatMessage(message.content)"></span>
             </div>
@@ -511,14 +511,17 @@ watch(() => chatStore.messages.length, (newLength) => {
   gap: 8px;
 }
 
+/* 打字机效果视觉增强 */
 .typing-cursor {
   display: inline-block;
-  width: 3px;
-  height: 15px;
+  width: 2px;
+  height: 1em;
   background-color: currentColor;
   margin-left: 1px;
-  animation: blink 0.8s infinite;
+  animation: blink 0.7s infinite;
   vertical-align: middle;
+  position: relative;
+  top: -1px;
 }
 
 @keyframes blink {
@@ -571,25 +574,19 @@ watch(() => chatStore.messages.length, (newLength) => {
   color: rgba(255, 255, 255, 0.9);
 }
 
-/* 打字动画效果增强 */
-.typing-cursor {
-  display: inline-block;
-  width: 3px;
-  height: 15px;
-  background-color: currentColor;
-  margin-left: 1px;
-  animation: blink 0.8s infinite;
-  vertical-align: middle;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
 /* 流式输出中的消息特殊处理 */
 .assistant.streaming .message-content {
   transition: none; /* 禁用过渡效果 */
+}
+
+/* 优化字符出现动画 */
+@keyframes char-appear {
+  from { opacity: 0.3; }
+  to { opacity: 1; }
+}
+
+.char-new {
+  animation: char-appear 0.15s ease-out;
 }
 
 /* 为当前更新的消息添加闪烁效果 */

@@ -29,10 +29,10 @@ export const useChatStore = defineStore('chat', () => {
   const RECONNECT_DELAY = 1000
   // 累积的内容
   let accumulatedContent = ''
-  // 批量更新计时器
-  let batchUpdateTimer = null
-  // 批量更新延迟
-  const BATCH_UPDATE_DELAY = 50
+  // 打字机效果相关变量
+  let fullContent = ''  // 完整的消息内容
+  let typewriterTimer = null
+  const TYPEWRITER_SPEED = 15  // 打字速度（毫秒/字）
   
   // 发送消息
   const sendMessage = async (messageText, provider = 'siliconflow', model = '') => {
@@ -99,30 +99,71 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
   
+  // 应用打字机效果
+  const applyTypewriterEffect = (assistantMessage) => {
+    // 清除现有计时器
+    if (typewriterTimer) {
+      clearInterval(typewriterTimer)
+    }
+    
+    // 获取完整内容
+    const targetContent = fullContent
+    
+    // 如果没有内容，直接返回
+    if (!targetContent) return
+    
+    // 当前显示的字符数
+    let displayedChars = assistantMessage.content.length
+    
+    // 创建定时器，逐字显示内容
+    typewriterTimer = setInterval(() => {
+      // 如果已经显示完全部内容，停止定时器
+      if (displayedChars >= targetContent.length) {
+        clearInterval(typewriterTimer)
+        typewriterTimer = null
+        return
+      }
+      
+      // 计算本次要显示的字符数量，一次显示1-3个字符以平衡速度和流畅性
+      // 通过随机数量可以让打字效果看起来更自然
+      const charsToAdd = Math.min(
+        targetContent.length - displayedChars,
+        Math.floor(Math.random() * 2) + 1
+      )
+      
+      // 添加字符
+      displayedChars += charsToAdd
+      
+      // 更新消息内容
+      assistantMessage.content = targetContent.substring(0, displayedChars)
+      
+      // 强制更新引用，确保Vue检测到变化
+      messages.value = [...messages.value]
+    }, TYPEWRITER_SPEED)
+  }
+  
   // 应用批量更新
   const applyBatchUpdate = (assistantMessage) => {
     if (accumulatedContent) {
       console.log('应用批量更新:', accumulatedContent.length, '个字符')
-      assistantMessage.content += accumulatedContent
+      
+      // 更新完整内容
+      fullContent += accumulatedContent
       accumulatedContent = ''
       
-      // 强制更新引用，确保Vue检测到变化
-      messages.value = [...messages.value]
+      // 应用打字机效果
+      applyTypewriterEffect(assistantMessage)
     }
   }
   
-  // 批量更新消息内容的防抖版本
-  const debouncedUpdate = debounce((assistantMessage) => {
-    applyBatchUpdate(assistantMessage)
-  }, BATCH_UPDATE_DELAY)
-  
   // 清除所有计时器和批处理
   const clearBatchUpdates = () => {
-    if (batchUpdateTimer) {
-      clearTimeout(batchUpdateTimer)
-      batchUpdateTimer = null
-    }
     accumulatedContent = ''
+    if (typewriterTimer) {
+      clearInterval(typewriterTimer)
+      typewriterTimer = null
+    }
+    fullContent = ''
   }
   
   // 关闭当前SSE连接
@@ -146,6 +187,7 @@ export const useChatStore = defineStore('chat', () => {
       // 如果还没有内容，显示正在重连提示
       if (!assistantMessage.content) {
         assistantMessage.content = `正在重新连接 (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`
+        fullContent = assistantMessage.content
       }
       
       // 关闭现有连接
@@ -157,8 +199,11 @@ export const useChatStore = defineStore('chat', () => {
       
       if (!assistantMessage.content) {
         assistantMessage.content = '连接失败，请重试'
+        fullContent = assistantMessage.content
       } else {
-        assistantMessage.content += '\n\n[连接中断，请刷新页面或重试]'
+        const errorText = '\n\n[连接中断，请刷新页面或重试]'
+        fullContent += errorText
+        assistantMessage.content += errorText
       }
       
       closeEventSource()
@@ -183,8 +228,9 @@ export const useChatStore = defineStore('chat', () => {
       // 重置重连计数
       reconnectAttempts = 0
       
-      // 清空累积内容
+      // 清空累积内容和完整内容
       accumulatedContent = ''
+      fullContent = ''
       
       // 准备AI助手回复消息
       const assistantMessage = {
@@ -225,6 +271,7 @@ export const useChatStore = defineStore('chat', () => {
             // 如果是重连且有"正在重连"提示，则清除
             if (assistantMessage.content.includes('正在重新连接')) {
               assistantMessage.content = ''
+              fullContent = ''
             }
           }
           
@@ -235,6 +282,10 @@ export const useChatStore = defineStore('chat', () => {
                 console.log('收到流结束标记')
                 // 应用最后的批量更新
                 applyBatchUpdate(assistantMessage)
+                
+                // 完成后确保显示完整内容
+                assistantMessage.content = fullContent
+                
                 loading.value = false
                 closeEventSource()
                 resolve(assistantMessage)
@@ -251,14 +302,11 @@ export const useChatStore = defineStore('chat', () => {
                 // 将内容添加到累积缓冲区
                 accumulatedContent += data.content
                 
-                // 使用防抖函数延迟更新
-                debouncedUpdate(assistantMessage)
-                
-                // 如果累积了足够多的内容或收到了句号、换行等，立即更新
-                if (accumulatedContent.length > 10 || 
+                // 如果累积了足够多的内容或收到了句号、换行等，应用批量更新
+                if (accumulatedContent.length > 5 || 
                     accumulatedContent.includes('。') || 
                     accumulatedContent.includes('\n')) {
-                  console.log('内容达到更新条件，立即更新')
+                  console.log('内容达到更新条件，应用打字机效果')
                   applyBatchUpdate(assistantMessage)
                 }
               }
@@ -272,6 +320,17 @@ export const useChatStore = defineStore('chat', () => {
                 console.log('收到完成标志')
                 // 应用最后的批量更新
                 applyBatchUpdate(assistantMessage)
+                
+                // 确保显示完整内容
+                setTimeout(() => {
+                  if (typewriterTimer) {
+                    clearInterval(typewriterTimer)
+                    typewriterTimer = null
+                  }
+                  assistantMessage.content = fullContent
+                  messages.value = [...messages.value]
+                }, 100)
+                
                 loading.value = false
                 closeEventSource()
                 resolve(assistantMessage)
@@ -292,6 +351,7 @@ export const useChatStore = defineStore('chat', () => {
           console.error('创建SSE连接失败:', error)
           loading.value = false
           assistantMessage.content = `请求失败: ${error.message}`
+          fullContent = assistantMessage.content
           resolve(assistantMessage)
         }
       }
