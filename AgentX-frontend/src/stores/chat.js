@@ -33,6 +33,10 @@ export const useChatStore = defineStore('chat', () => {
   let fullContent = ''  // 完整的消息内容
   let typewriterTimer = null
   const TYPEWRITER_SPEED = 15  // 打字速度（毫秒/字）
+  // 消息超时定时器
+  let messageTimeoutTimer = null
+  // 超时时间（增加到3分钟）
+  const MESSAGE_TIMEOUT = 180000
   
   // 发送消息
   const sendMessage = async (messageText, provider = 'siliconflow', model = '') => {
@@ -149,10 +153,15 @@ export const useChatStore = defineStore('chat', () => {
       
       // 更新完整内容
       fullContent += accumulatedContent
+      
+      // 直接更新消息内容，不使用打字机效果
+      assistantMessage.content = fullContent
+      
+      // 清空累积缓冲区
       accumulatedContent = ''
       
-      // 应用打字机效果
-      applyTypewriterEffect(assistantMessage)
+      // 强制更新引用，确保Vue检测到变化
+      messages.value = [...messages.value]
     }
   }
   
@@ -174,46 +183,34 @@ export const useChatStore = defineStore('chat', () => {
       eventSource = null
       reconnectAttempts = 0
       clearBatchUpdates()
+      
+      // 清除消息超时定时器
+      clearAllTimers()
     }
   }
   
-  // 处理SSE连接错误与重连
-  const handleSSEError = (assistantMessage, resolve) => {
-    console.error(`SSE连接错误 (尝试 ${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`)
+  // 清除所有定时器
+  const clearAllTimers = () => {
+    if (messageTimeoutTimer) {
+      clearTimeout(messageTimeoutTimer)
+      messageTimeoutTimer = null
+    }
     
-    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-      reconnectAttempts++
-      
-      // 如果还没有内容，显示正在重连提示
-      if (!assistantMessage.content) {
-        assistantMessage.content = `正在重新连接 (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`
-        fullContent = assistantMessage.content
-      }
-      
-      // 关闭现有连接
-      closeEventSource()
-      
-    } else {
-      // 超过最大重试次数
-      loading.value = false
-      
-      if (!assistantMessage.content) {
-        assistantMessage.content = '连接失败，请重试'
-        fullContent = assistantMessage.content
-      } else {
-        const errorText = '\n\n[连接中断，请刷新页面或重试]'
-        fullContent += errorText
-        assistantMessage.content += errorText
-      }
-      
-      closeEventSource()
-      resolve(assistantMessage)
+    if (typewriterTimer) {
+      clearInterval(typewriterTimer)
+      typewriterTimer = null
     }
   }
   
   // 发送流式消息 (SSE)
   const sendStreamMessage = (messageText, provider = 'siliconflow', model = '') => {
     return new Promise((resolve) => {
+      // 首先关闭可能存在的之前的连接
+      closeEventSource()
+      
+      // 清除所有定时器
+      clearAllTimers()
+      
       // 添加用户消息
       const userMessage = {
         role: 'user',
@@ -242,12 +239,101 @@ export const useChatStore = defineStore('chat', () => {
       }
       messages.value.push(assistantMessage)
       
+      // 集中处理流式传输结束的逻辑
+      const finishStreaming = (assistantMessage, resolve, isTimeout = false, isError = false) => {
+        // 如果已经完成，不重复处理
+        if (!loading.value) {
+          return
+        }
+        
+        console.log(`流式传输${isTimeout ? '超时' : (isError ? '错误' : '正常')}结束`)
+        
+        // 应用最后的批量更新
+        if (accumulatedContent) {
+          // 直接应用，不通过applyBatchUpdate以确保一定会显示
+          fullContent += accumulatedContent
+          accumulatedContent = ''
+        }
+        
+        // 确保显示完整内容
+        if (fullContent) {
+          assistantMessage.content = fullContent
+        } else if (isTimeout) {
+          assistantMessage.content = '响应超时，请重试'
+        } else if (isError) {
+          assistantMessage.content = '连接出错，请重试'
+        }
+        
+        // 强制更新Vue引用
+        messages.value = [...messages.value]
+        
+        // 修改状态
+        loading.value = false
+        
+        // 关闭连接
+        closeEventSource()
+        
+        // 完成Promise
+        resolve(assistantMessage)
+      }
+      
+      // 设置消息超时处理
+      messageTimeoutTimer = setTimeout(() => {
+        if (loading.value) {
+          console.log('消息接收超时，自动关闭连接')
+          finishStreaming(assistantMessage, resolve, true)
+        }
+      }, MESSAGE_TIMEOUT)
+      
+      // 处理SSE连接错误与重连 - 本次会话专用的错误处理
+      const handleSSEErrorLocal = (error) => {
+        console.error(`SSE连接错误 (尝试 ${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`, error)
+        
+        // 如果已经有内容，不再尝试重连，直接显示已接收的内容
+        if (fullContent.length > 0) {
+          console.log('已有内容，放弃重连，显示现有内容')
+          finishStreaming(assistantMessage, resolve, false, true)
+          return
+        }
+        
+        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          reconnectAttempts++
+          
+          // 如果还没有内容，显示正在重连提示
+          if (!assistantMessage.content) {
+            assistantMessage.content = `正在重新连接 (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`
+            fullContent = assistantMessage.content
+          }
+          
+          // 关闭现有连接并重新创建连接
+          if (eventSource) {
+            eventSource.close()
+            eventSource = null
+          }
+          
+          // 重新创建连接
+          setTimeout(createSSEConnection, RECONNECT_DELAY)
+          
+        } else {
+          // 超过最大重试次数
+          const errorMessage = '连接失败，请重试'
+          
+          if (!assistantMessage.content) {
+            assistantMessage.content = errorMessage
+            fullContent = errorMessage
+          } else {
+            const errorText = '\n\n[连接中断，请刷新页面或重试]'
+            fullContent += errorText
+            assistantMessage.content += errorText
+          }
+          
+          finishStreaming(assistantMessage, resolve, false, true)
+        }
+      }
+      
       // 创建SSE连接函数
       const createSSEConnection = () => {
         try {
-          // 关闭已有的EventSource连接
-          closeEventSource()
-          
           // 准备查询参数
           const params = new URLSearchParams({
             message: messageText,
@@ -278,22 +364,24 @@ export const useChatStore = defineStore('chat', () => {
           // 接收消息事件
           eventSource.onmessage = (event) => {
             try {
-              if (!event.data || event.data === '[DONE]') {
-                console.log('收到流结束标记')
-                // 应用最后的批量更新
-                applyBatchUpdate(assistantMessage)
-                
-                // 完成后确保显示完整内容
-                assistantMessage.content = fullContent
-                
-                loading.value = false
-                closeEventSource()
-                resolve(assistantMessage)
+              console.log('收到消息数据:', event.data)
+              
+              // 处理结束信号或空数据
+              if (!event.data || event.data === '[DONE]' || event.data.trim() === '') {
+                console.log('收到流结束标记或空数据')
+                finishStreaming(assistantMessage, resolve, false)
                 return
               }
               
-              console.log('收到消息:', event.data)
-              const data = JSON.parse(event.data)
+              // 尝试解析JSON
+              let data
+              try {
+                data = JSON.parse(event.data)
+              } catch (jsonError) {
+                console.error('解析JSON失败:', jsonError, '原始数据:', event.data)
+                // 如果不是JSON，当作纯文本内容处理
+                data = { content: event.data }
+              }
               
               // 追加内容
               if (data.content !== undefined && data.content !== '') {
@@ -302,57 +390,50 @@ export const useChatStore = defineStore('chat', () => {
                 // 将内容添加到累积缓冲区
                 accumulatedContent += data.content
                 
-                // 如果累积了足够多的内容或收到了句号、换行等，应用批量更新
-                if (accumulatedContent.length > 5 || 
-                    accumulatedContent.includes('。') || 
-                    accumulatedContent.includes('\n')) {
-                  console.log('内容达到更新条件，应用打字机效果')
-                  applyBatchUpdate(assistantMessage)
-                }
+                // 立即应用每个内容块，提高响应速度
+                applyBatchUpdate(assistantMessage)
               }
               
               // 更新其他元数据
               if (data.provider) assistantMessage.provider = data.provider
               if (data.model) assistantMessage.model = data.model
               
-              // 检查是否完成
+              // 只检查明确的done===true信号，不再基于标点推测消息结束
               if (data.done === true) {
-                console.log('收到完成标志')
-                // 应用最后的批量更新
-                applyBatchUpdate(assistantMessage)
+                console.log('收到完成标志，done = true')
                 
-                // 确保显示完整内容
-                setTimeout(() => {
-                  if (typewriterTimer) {
-                    clearInterval(typewriterTimer)
-                    typewriterTimer = null
-                  }
-                  assistantMessage.content = fullContent
-                  messages.value = [...messages.value]
-                }, 100)
-                
-                loading.value = false
-                closeEventSource()
-                resolve(assistantMessage)
+                // 对于明确的done:true信号，立即结束
+                finishStreaming(assistantMessage, resolve, false)
               }
               
               // 重置重连尝试次数（因为成功接收了数据）
               reconnectAttempts = 0
+              
+              // 每次收到消息时重置全局超时计时器
+              if (messageTimeoutTimer) {
+                clearTimeout(messageTimeoutTimer)
+              }
+              
+              messageTimeoutTimer = setTimeout(() => {
+                if (loading.value) {
+                  console.log('长时间没有新消息，自动关闭连接')
+                  finishStreaming(assistantMessage, resolve, true)
+                }
+              }, MESSAGE_TIMEOUT)
             } catch (error) {
-              console.error('处理SSE消息出错:', error, event.data)
+              console.error('处理SSE消息出错:', error, '原始数据:', event.data)
             }
           }
           
           // 错误处理
           eventSource.onerror = (error) => {
-            handleSSEError(assistantMessage, resolve)
+            handleSSEErrorLocal(error)
           }
         } catch (error) {
           console.error('创建SSE连接失败:', error)
-          loading.value = false
           assistantMessage.content = `请求失败: ${error.message}`
           fullContent = assistantMessage.content
-          resolve(assistantMessage)
+          finishStreaming(assistantMessage, resolve, false, true)
         }
       }
       
