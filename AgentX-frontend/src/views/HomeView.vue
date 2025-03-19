@@ -101,21 +101,26 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 100vh;
   height: 100vh;
   background-color: var(--color-bg);
   position: relative;
+  padding: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .chat-container {
-  width: 90%;
-  max-width: 800px;
-  height: 90vh;
+  width: 100%;
+  max-width: 500px;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: white;
-  border-radius: 12px;
+  border-radius: 0;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  margin: 0 auto;
 }
 
 .chat-header {
@@ -148,6 +153,16 @@ onMounted(() => {
   height: 100%;
   color: #888;
   font-size: 1.1rem;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  padding: 0;
 }
 
 .message {
@@ -249,6 +264,12 @@ onMounted(() => {
     width: 100%;
     height: 100vh;
     border-radius: 0;
+    margin: 0;
+    max-width: none;
+  }
+  
+  .chat-main {
+    padding: 0;
   }
   
   .message {
