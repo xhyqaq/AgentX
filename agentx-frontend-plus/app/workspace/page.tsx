@@ -21,7 +21,7 @@ export default function WorkspacePage() {
   }, [workspaceId, selectedWorkspaceId, setSelectedWorkspaceId])
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)]">
+    <div className="flex h-[calc(100vh-3.5rem)] w-full">
       {/* 左侧边栏 */}
       <Sidebar />
 
@@ -36,10 +36,23 @@ export default function WorkspacePage() {
 
       {/* 右侧聊天面板 */}
       {selectedConversationId ? (
-        <ChatPanel conversationId={selectedConversationId} />
+        <div className="flex-1 flex">
+          <ChatPanel conversationId={selectedConversationId} />
+        </div>
       ) : (
         <div className="flex-1 flex items-center justify-center bg-gray-50">
-          <EmptyState title="选择或开始一个对话" description="从中间列表选择一个对话，或者创建一个新的对话" />
+          <EmptyState
+            title="选择或开始一个对话"
+            description="从中间列表选择一个对话，或者创建一个新的对话"
+            actionLabel="开启新会话"
+            onAction={() => {
+              // 这里可以触发创建新会话的对话框
+              const createButton = document.querySelector(".conversation-list-create-button") as HTMLButtonElement
+              if (createButton) {
+                createButton.click()
+              }
+            }}
+          />
         </div>
       )}
     </div>

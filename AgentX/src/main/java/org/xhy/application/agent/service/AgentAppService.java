@@ -10,9 +10,9 @@ import org.xhy.domain.agent.model.AgentVersionEntity;
 import org.xhy.domain.agent.service.AgentService;
 import org.xhy.interfaces.dto.agent.CreateAgentRequest;
 import org.xhy.interfaces.dto.agent.PublishAgentVersionRequest;
-import org.xhy.interfaces.dto.agent.UpdateAgentBasicInfoRequest;
-import org.xhy.interfaces.dto.agent.UpdateAgentConfigRequest;
 import org.xhy.interfaces.dto.agent.UpdateAgentRequest;
+import org.xhy.interfaces.dto.agent.ReviewAgentVersionRequest;
+import org.xhy.domain.agent.model.PublishStatus;
 
 import java.util.List;
 
@@ -39,10 +39,10 @@ public class AgentAppService {
     public AgentDTO createAgent(CreateAgentRequest request) {
         // 在应用层验证请求
         request.validate();
-        
+
         // 使用组装器创建领域实体
         AgentEntity entity = AgentAssembler.toEntity(request);
-        
+
         // 调用领域服务
         return agentService.createAgent(entity);
     }
@@ -71,7 +71,7 @@ public class AgentAppService {
     /**
      * 获取已上架的Agent列表
      */
-    public List<AgentDTO> getPublishedAgents() {
+    public List<AgentVersionDTO> getPublishedAgents() {
         return agentService.getPublishedAgents();
     }
 
@@ -89,20 +89,18 @@ public class AgentAppService {
         // 在应用层验证请求
         request.validate();
 
-
         // 使用组装器创建更新实体
         AgentEntity updateEntity = AgentAssembler.toEntity(request);
-        
+
         // 调用领域服务更新Agent
         return agentService.updateAgent(agentId, updateEntity);
     }
 
-
     /**
-     * 更新Agent状态
+     * 切换Agent的启用/禁用状态
      */
-    public AgentDTO updateAgentStatus(String agentId, AgentStatus status) {
-        return agentService.updateAgentStatus(agentId, status);
+    public AgentDTO toggleAgentStatus(String agentId) {
+        return agentService.toggleAgentStatus(agentId);
     }
 
     /**
@@ -115,8 +113,8 @@ public class AgentAppService {
     /**
      * 搜索Agent
      */
-    public List<AgentDTO> searchAgents(String userId, String keyword) {
-        return agentService.searchAgents(userId, keyword);
+    public List<AgentVersionDTO> searchAgents(String name) {
+        return agentService.searchAgents(name);
     }
 
     /**
@@ -125,23 +123,23 @@ public class AgentAppService {
     public AgentVersionDTO publishAgentVersion(String agentId, PublishAgentVersionRequest request) {
         // 在应用层验证请求
         request.validate();
-        
+
         // 获取当前Agent
         AgentDTO currentAgentDTO = agentService.getAgent(agentId);
-        
+
         // 获取最新版本，检查版本号大小
         AgentVersionDTO latestVersion = agentService.getLatestAgentVersion(agentId);
         if (latestVersion != null) {
             // 检查版本号是否大于上一个版本
             if (!request.isVersionGreaterThan(latestVersion.getVersionNumber())) {
-                throw new IllegalArgumentException("新版本号(" + request.getVersionNumber() + 
+                throw new IllegalArgumentException("新版本号(" + request.getVersionNumber() +
                         ")必须大于当前最新版本号(" + latestVersion.getVersionNumber() + ")");
             }
         }
 
         // 使用组装器创建版本实体
         AgentVersionEntity versionEntity = AgentAssembler.createVersionEntity(currentAgentDTO.toEntity(), request);
-        
+
         // 调用领域服务发布版本
         return agentService.publishAgentVersion(agentId, versionEntity);
     }
@@ -166,4 +164,31 @@ public class AgentAppService {
     public AgentVersionDTO getLatestAgentVersion(String agentId) {
         return agentService.getLatestAgentVersion(agentId);
     }
-} 
+
+    /**
+     * 审核Agent版本
+     */
+    public AgentVersionDTO reviewAgentVersion(String versionId, ReviewAgentVersionRequest request) {
+        // 在应用层验证请求
+        request.validate();
+
+        // 根据状态执行相应操作
+        if (PublishStatus.REJECTED.equals(request.getStatus())) {
+            // 拒绝发布，需使用拒绝原因
+            return agentService.rejectVersion(versionId, request.getRejectReason());
+        } else {
+            // 其他状态变更，直接更新状态
+            return agentService.updateVersionPublishStatus(versionId, request.getStatus());
+        }
+    }
+
+    /**
+     * 根据发布状态获取版本列表
+     * 
+     * @param status 发布状态
+     * @return 版本列表（每个助理只返回最新版本）
+     */
+    public List<AgentVersionDTO> getVersionsByStatus(PublishStatus status) {
+        return agentService.getVersionsByStatus(status);
+    }
+}

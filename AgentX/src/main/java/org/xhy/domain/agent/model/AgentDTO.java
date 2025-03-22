@@ -60,12 +60,12 @@ public class AgentDTO {
     private String publishedVersion;
 
     /**
-     * Agent状态
+     * Agent状态：true-启用，false-禁用
      */
-    private Integer status;
+    private Boolean enabled;
 
     /**
-     * Agent类型
+     * Agent类型：1-聊天助手, 2-功能性Agent
      */
     private Integer agentType;
 
@@ -143,7 +143,7 @@ public class AgentDTO {
     }
 
     public ModelConfig getModelConfig() {
-        return modelConfig != null ? modelConfig : ModelConfig.createDefault();
+        return modelConfig;
     }
 
     public void setModelConfig(ModelConfig modelConfig) {
@@ -151,7 +151,7 @@ public class AgentDTO {
     }
 
     public List<AgentTool> getTools() {
-        return tools != null ? tools : new ArrayList<>();
+        return tools;
     }
 
     public void setTools(List<AgentTool> tools) {
@@ -159,7 +159,7 @@ public class AgentDTO {
     }
 
     public List<String> getKnowledgeBaseIds() {
-        return knowledgeBaseIds != null ? knowledgeBaseIds : new ArrayList<>();
+        return knowledgeBaseIds;
     }
 
     public void setKnowledgeBaseIds(List<String> knowledgeBaseIds) {
@@ -174,12 +174,12 @@ public class AgentDTO {
         this.publishedVersion = publishedVersion;
     }
 
-    public Integer getStatus() {
-        return status;
+    public Boolean getEnabled() {
+        return enabled;
     }
 
-    public void setStatus(Integer status) {
-        this.status = status;
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 
     public Integer getAgentType() {
@@ -218,7 +218,7 @@ public class AgentDTO {
      * 获取状态文本描述
      */
     public String getStatusText() {
-        return AgentStatus.fromCode(status).getDescription();
+        return AgentStatus.fromCode(enabled ? 1 : 0).getDescription();
     }
 
     /**
@@ -244,7 +244,7 @@ public class AgentDTO {
         entity.setTools(this.tools);
         entity.setKnowledgeBaseIds(this.knowledgeBaseIds);
         entity.setPublishedVersion(this.publishedVersion);
-        entity.setStatus(this.status);
+        entity.setEnabled(this.enabled);
         entity.setAgentType(this.agentType);
         entity.setUserId(this.userId);
         entity.setCreatedAt(this.createdAt);

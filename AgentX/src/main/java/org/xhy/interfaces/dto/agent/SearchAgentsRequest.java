@@ -5,32 +5,14 @@ package org.xhy.interfaces.dto.agent;
  */
 public class SearchAgentsRequest {
     
-    private String userId;
-    private String keyword;
+    private String name;
     
-    // 构造方法
-    public SearchAgentsRequest() {
+    
+    public String getName() {
+        return name;
     }
     
-    public SearchAgentsRequest(String userId, String keyword) {
-        this.userId = userId;
-        this.keyword = keyword;
-    }
-    
-    // Getter和Setter
-    public String getUserId() {
-        return userId;
-    }
-    
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-    
-    public String getKeyword() {
-        return keyword;
-    }
-    
-    public void setKeyword(String keyword) {
-        this.keyword = keyword;
+    public void setName(String name) {
+        this.name = name;
     }
 } 

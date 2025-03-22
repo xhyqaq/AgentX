@@ -95,3 +95,17 @@ CREATE INDEX idx_agent_versions_version_number ON agent_versions(version_number)
 CREATE INDEX idx_agent_versions_published_at ON agent_versions(published_at);
 CREATE INDEX idx_agent_workspace_user_id ON agent_workspace(user_id);
 CREATE INDEX idx_agent_workspace_agent_id ON agent_workspace(agent_id); 
+
+-- 将status字段改为enabled（布尔类型）
+ALTER TABLE agents RENAME COLUMN status TO enabled;
+ALTER TABLE agents ALTER COLUMN enabled TYPE boolean USING CASE WHEN enabled > 0 THEN true ELSE false END;
+
+-- 添加发布状态相关字段
+ALTER TABLE agent_versions ADD COLUMN publish_status INTEGER DEFAULT 1;
+ALTER TABLE agent_versions ADD COLUMN reject_reason TEXT;
+ALTER TABLE agent_versions ADD COLUMN review_time TIMESTAMP;
+
+-- 添加注释
+COMMENT ON COLUMN agent_versions.publish_status IS '发布状态：1-审核中, 2-已发布, 3-拒绝, 4-已下架';
+COMMENT ON COLUMN agent_versions.reject_reason IS '审核拒绝原因';
+COMMENT ON COLUMN agent_versions.review_time IS '审核时间';

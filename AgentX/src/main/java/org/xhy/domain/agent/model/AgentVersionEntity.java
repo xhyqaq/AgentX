@@ -31,6 +31,24 @@ public class AgentVersionEntity extends Model<AgentVersionEntity> {
     private String agentId;
 
     /**
+     * Agent名称
+     */
+    @TableField("name")
+    private String name;
+
+    /**
+     * Agent头像URL
+     */
+    @TableField("avatar")
+    private String avatar;
+
+    /**
+     * Agent描述
+     */
+    @TableField("description")
+    private String description;
+
+    /**
      * 版本号，如1.0.0
      */
     @TableField("version_number")
@@ -79,10 +97,52 @@ public class AgentVersionEntity extends Model<AgentVersionEntity> {
     private Integer agentType;
 
     /**
+     * 发布状态：1-审核中, 2-已发布, 3-拒绝, 4-已下架
+     */
+    @TableField("publish_status")
+    private Integer publishStatus;
+
+    /**
+     * 审核拒绝原因
+     */
+    @TableField("reject_reason")
+    private String rejectReason;
+
+    /**
+     * 审核时间
+     */
+    @TableField("review_time")
+    private LocalDateTime reviewTime;
+
+    /**
      * 发布时间
      */
     @TableField("published_at")
     private LocalDateTime publishedAt;
+
+    /**
+     * 创建者用户ID
+     */
+    @TableField("user_id")
+    private String userId;
+
+    /**
+     * 创建时间
+     */
+    @TableField("created_at")
+    private LocalDateTime createdAt;
+
+    /**
+     * 最后更新时间
+     */
+    @TableField("updated_at")
+    private LocalDateTime updatedAt;
+
+    /**
+     * 删除时间（软删除）
+     */
+    @TableField("deleted_at")
+    private LocalDateTime deletedAt;
 
     /**
      * 无参构造函数
@@ -96,11 +156,18 @@ public class AgentVersionEntity extends Model<AgentVersionEntity> {
     /**
      * 全参构造函数
      */
-    public AgentVersionEntity(String id, String agentId, String versionNumber, String systemPrompt, 
-                      String welcomeMessage, ModelConfig modelConfig, List<AgentTool> tools, 
-                      List<String> knowledgeBaseIds, String changeLog, Integer agentType, LocalDateTime publishedAt) {
+    public AgentVersionEntity(String id, String agentId, String name, String avatar, String description,
+            String versionNumber, String systemPrompt, String welcomeMessage,
+            ModelConfig modelConfig, List<AgentTool> tools, List<String> knowledgeBaseIds,
+            String changeLog, Integer agentType, String userId,
+            LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt,
+            Integer publishStatus, String rejectReason, LocalDateTime reviewTime,
+            LocalDateTime publishedAt) {
         this.id = id;
         this.agentId = agentId;
+        this.name = name;
+        this.avatar = avatar;
+        this.description = description;
         this.versionNumber = versionNumber;
         this.systemPrompt = systemPrompt;
         this.welcomeMessage = welcomeMessage;
@@ -109,6 +176,13 @@ public class AgentVersionEntity extends Model<AgentVersionEntity> {
         this.knowledgeBaseIds = knowledgeBaseIds;
         this.changeLog = changeLog;
         this.agentType = agentType;
+        this.userId = userId;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.deletedAt = deletedAt;
+        this.publishStatus = publishStatus;
+        this.rejectReason = rejectReason;
+        this.reviewTime = reviewTime;
         this.publishedAt = publishedAt;
     }
 
@@ -193,6 +267,30 @@ public class AgentVersionEntity extends Model<AgentVersionEntity> {
         this.agentType = agentType;
     }
 
+    public Integer getPublishStatus() {
+        return publishStatus;
+    }
+
+    public void setPublishStatus(Integer publishStatus) {
+        this.publishStatus = publishStatus;
+    }
+
+    public String getRejectReason() {
+        return rejectReason;
+    }
+
+    public void setRejectReason(String rejectReason) {
+        this.rejectReason = rejectReason;
+    }
+
+    public LocalDateTime getReviewTime() {
+        return reviewTime;
+    }
+
+    public void setReviewTime(LocalDateTime reviewTime) {
+        this.reviewTime = reviewTime;
+    }
+
     public LocalDateTime getPublishedAt() {
         return publishedAt;
     }
@@ -201,21 +299,114 @@ public class AgentVersionEntity extends Model<AgentVersionEntity> {
         this.publishedAt = publishedAt;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
     /**
-     * 从Agent创建新版本
+     * 获取发布状态枚举
+     */
+    public PublishStatus getPublishStatusEnum() {
+        return PublishStatus.fromCode(this.publishStatus);
+    }
+
+    /**
+     * 更新发布状态
+     */
+    public void updatePublishStatus(PublishStatus status) {
+        this.publishStatus = status.getCode();
+        this.reviewTime = LocalDateTime.now();
+    }
+
+    /**
+     * 拒绝发布
+     */
+    public void reject(String reason) {
+        this.publishStatus = PublishStatus.REJECTED.getCode();
+        this.rejectReason = reason;
+        this.reviewTime = LocalDateTime.now();
+    }
+
+    /**
+     * 从Agent实体创建一个新的版本实体
      */
     public static AgentVersionEntity createFromAgent(AgentEntity agent, String versionNumber, String changeLog) {
         AgentVersionEntity version = new AgentVersionEntity();
         version.setAgentId(agent.getId());
+        version.setName(agent.getName());
+        version.setAvatar(agent.getAvatar());
+        version.setDescription(agent.getDescription());
         version.setVersionNumber(versionNumber);
         version.setSystemPrompt(agent.getSystemPrompt());
         version.setWelcomeMessage(agent.getWelcomeMessage());
         version.setModelConfig(agent.getModelConfig());
         version.setTools(agent.getTools());
         version.setKnowledgeBaseIds(agent.getKnowledgeBaseIds());
-        version.setAgentType(agent.getAgentType());
         version.setChangeLog(changeLog);
-        version.setPublishedAt(LocalDateTime.now());
+        version.setAgentType(agent.getAgentType());
+        version.setUserId(agent.getUserId());
+
+        // 创建时间和发布时间应该相同
+        LocalDateTime now = LocalDateTime.now();
+        version.setCreatedAt(now);
+        version.setUpdatedAt(now);
+        version.setPublishedAt(now);
+
+        // 设置初始状态为审核中
+        version.setPublishStatus(PublishStatus.REVIEWING.getCode());
+        version.setReviewTime(now);
         return version;
     }
 
@@ -226,6 +417,9 @@ public class AgentVersionEntity extends Model<AgentVersionEntity> {
         AgentVersionDTO dto = new AgentVersionDTO();
         dto.setId(this.id);
         dto.setAgentId(this.agentId);
+        dto.setName(this.name);
+        dto.setAvatar(this.avatar);
+        dto.setDescription(this.description);
         dto.setVersionNumber(this.versionNumber);
         dto.setSystemPrompt(this.systemPrompt);
         dto.setWelcomeMessage(this.welcomeMessage);
@@ -234,7 +428,14 @@ public class AgentVersionEntity extends Model<AgentVersionEntity> {
         dto.setKnowledgeBaseIds(this.knowledgeBaseIds);
         dto.setChangeLog(this.changeLog);
         dto.setAgentType(this.agentType);
+        dto.setPublishStatus(this.publishStatus);
+        dto.setRejectReason(this.rejectReason);
+        dto.setReviewTime(this.reviewTime);
         dto.setPublishedAt(this.publishedAt);
+        dto.setUserId(this.userId);
+        dto.setCreatedAt(this.createdAt);
+        dto.setUpdatedAt(this.updatedAt);
+        dto.setDeletedAt(this.deletedAt);
         return dto;
     }
-} 
+}

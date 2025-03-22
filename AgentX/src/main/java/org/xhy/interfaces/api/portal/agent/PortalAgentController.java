@@ -1,6 +1,5 @@
-package org.xhy.interfaces.api.agent;
+package org.xhy.interfaces.api.portal.agent;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.xhy.application.agent.service.AgentAppService;
 import org.xhy.domain.agent.model.AgentDTO;
@@ -12,15 +11,15 @@ import org.xhy.interfaces.dto.agent.*;
 import java.util.List;
 
 /**
- * Agent管理API控制器
+ * 前台用户Agent管理API控制器
  */
 @RestController
 @RequestMapping("/agent")
-public class AgentController {
+public class PortalAgentController {
 
     private final AgentAppService agentAppService;
 
-    public AgentController(AgentAppService agentAppService) {
+    public PortalAgentController(AgentAppService agentAppService) {
         this.agentAppService = agentAppService;
     }
 
@@ -46,7 +45,7 @@ public class AgentController {
      */
     @GetMapping("/user/{userId}")
     public Result<List<AgentDTO>> getUserAgents(@PathVariable String userId,
-                                              @RequestParam(required = false) Integer statusCode) {
+            @RequestParam(required = false) Integer statusCode) {
         if (statusCode != null) {
             AgentStatus status = AgentStatus.fromCode(statusCode);
             return Result.success(agentAppService.getUserAgentsByStatus(userId, status));
@@ -59,16 +58,8 @@ public class AgentController {
      * 获取已上架的Agent列表
      */
     @GetMapping("/published")
-    public Result<List<AgentDTO>> getPublishedAgents() {
+    public Result<List<AgentVersionDTO>> getPublishedAgents() {
         return Result.success(agentAppService.getPublishedAgents());
-    }
-
-    /**
-     * 获取待审核的Agent列表
-     */
-    @GetMapping("/pending")
-    public Result<List<AgentDTO>> getPendingReviewAgents() {
-        return Result.success(agentAppService.getPendingReviewAgents());
     }
 
     /**
@@ -76,8 +67,16 @@ public class AgentController {
      */
     @PutMapping("/{agentId}")
     public Result<AgentDTO> updateAgent(@PathVariable String agentId,
-                                      @RequestBody UpdateAgentRequest request) {
+            @RequestBody UpdateAgentRequest request) {
         return Result.success(agentAppService.updateAgent(agentId, request));
+    }
+
+    /**
+     * 切换Agent的启用/禁用状态
+     */
+    @PutMapping("/{agentId}/toggle-status")
+    public Result<AgentDTO> toggleAgentStatus(@PathVariable String agentId) {
+        return Result.success(agentAppService.toggleAgentStatus(agentId));
     }
 
     /**
@@ -93,8 +92,8 @@ public class AgentController {
      * 搜索Agent
      */
     @PostMapping("/search")
-    public Result<List<AgentDTO>> searchAgents(@RequestBody SearchAgentsRequest request) {
-        return Result.success(agentAppService.searchAgents(request.getUserId(), request.getKeyword()));
+    public Result<List<AgentVersionDTO>> searchAgents(@RequestBody SearchAgentsRequest request) {
+        return Result.success(agentAppService.searchAgents(request.getName()));
     }
 
     /**
@@ -102,10 +101,10 @@ public class AgentController {
      */
     @PostMapping("/{agentId}/publish")
     public Result<AgentVersionDTO> publishAgentVersion(@PathVariable String agentId,
-                                                    @RequestBody PublishAgentVersionRequest request) {
+            @RequestBody PublishAgentVersionRequest request) {
         return Result.success(agentAppService.publishAgentVersion(agentId, request));
     }
-    
+
     /**
      * 获取Agent的所有版本
      */
@@ -113,16 +112,16 @@ public class AgentController {
     public Result<List<AgentVersionDTO>> getAgentVersions(@PathVariable String agentId) {
         return Result.success(agentAppService.getAgentVersions(agentId));
     }
-    
+
     /**
      * 获取Agent的特定版本
      */
     @GetMapping("/{agentId}/versions/{versionNumber}")
     public Result<AgentVersionDTO> getAgentVersion(@PathVariable String agentId,
-                                                @PathVariable String versionNumber) {
+            @PathVariable String versionNumber) {
         return Result.success(agentAppService.getAgentVersion(agentId, versionNumber));
     }
-    
+
     /**
      * 获取Agent的最新版本
      */
@@ -130,4 +129,4 @@ public class AgentController {
     public Result<AgentVersionDTO> getLatestAgentVersion(@PathVariable String agentId) {
         return Result.success(agentAppService.getLatestAgentVersion(agentId));
     }
-} 
+}

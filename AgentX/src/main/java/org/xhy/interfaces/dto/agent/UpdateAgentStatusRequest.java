@@ -1,6 +1,5 @@
 package org.xhy.interfaces.dto.agent;
 
-import org.xhy.domain.agent.model.AgentStatus;
 import org.xhy.domain.common.util.ValidationUtils;
 
 /**
@@ -8,29 +7,29 @@ import org.xhy.domain.common.util.ValidationUtils;
  */
 public class UpdateAgentStatusRequest {
     
-    private AgentStatus status;
+    private Boolean enabled;
     
     // 构造方法
     public UpdateAgentStatusRequest() {
     }
     
-    public UpdateAgentStatusRequest(AgentStatus status) {
-        this.status = status;
+    public UpdateAgentStatusRequest(Boolean enabled) {
+        this.enabled = enabled;
     }
     
     /**
      * 校验请求参数
      */
     public void validate() {
-        ValidationUtils.notNull(status, "status");
+        ValidationUtils.notNull(enabled, "enabled");
     }
     
     // Getter和Setter
-    public AgentStatus getStatus() {
-        return status;
+    public Boolean getEnabled() {
+        return enabled;
     }
     
-    public void setStatus(AgentStatus status) {
-        this.status = status;
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 } 

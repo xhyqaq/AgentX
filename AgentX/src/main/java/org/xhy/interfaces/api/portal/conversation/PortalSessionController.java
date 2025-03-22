@@ -1,4 +1,4 @@
-package org.xhy.interfaces.api.conversation;
+package org.xhy.interfaces.api.portal.conversation;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +15,11 @@ import org.xhy.interfaces.dto.conversation.*;
 import java.util.List;
 
 /**
- * 会话管理API控制器
+ * 前台用户会话管理API控制器
  */
 @RestController
 @RequestMapping("/conversation")
-public class SessionController {
+public class PortalSessionController {
 
     private final SessionAppService sessionAppService;
     private final MessageAppService messageAppService;
@@ -28,7 +28,7 @@ public class SessionController {
     /**
      * 构造函数注入
      */
-    public SessionController(SessionAppService sessionAppService,
+    public PortalSessionController(SessionAppService sessionAppService,
             MessageAppService messageAppService,
             ConversationAppService conversationAppService) {
         this.sessionAppService = sessionAppService;
@@ -155,4 +155,4 @@ public class SessionController {
         conversationAppService.clearContext(sessionId);
         return ResponseEntity.ok().build();
     }
-}
+} 

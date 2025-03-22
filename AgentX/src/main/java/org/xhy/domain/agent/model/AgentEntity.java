@@ -80,10 +80,10 @@ public class AgentEntity extends Model<AgentEntity> {
     private String publishedVersion;
 
     /**
-     * Agent状态
+     * Agent状态：1-启用，0-禁用
      */
-    @TableField("status")
-    private Integer status;
+    @TableField("enabled")
+    private Boolean enabled;
 
     /**
      * Agent类型：1-聊天助手, 2-功能性Agent
@@ -130,7 +130,7 @@ public class AgentEntity extends Model<AgentEntity> {
      */
     public AgentEntity(String id, String name, String avatar, String description, String systemPrompt,
                 String welcomeMessage, ModelConfig modelConfig, List<AgentTool> tools, List<String> knowledgeBaseIds,
-                String publishedVersion, Integer status, Integer agentType, String userId, 
+                String publishedVersion, Boolean enabled, Integer agentType, String userId, 
                 LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt) {
         this.id = id;
         this.name = name;
@@ -142,7 +142,7 @@ public class AgentEntity extends Model<AgentEntity> {
         this.tools = tools;
         this.knowledgeBaseIds = knowledgeBaseIds;
         this.publishedVersion = publishedVersion;
-        this.status = status;
+        this.enabled = enabled;
         this.agentType = agentType;
         this.userId = userId;
         this.createdAt = createdAt;
@@ -231,12 +231,12 @@ public class AgentEntity extends Model<AgentEntity> {
         this.publishedVersion = publishedVersion;
     }
 
-    public Integer getStatus() {
-        return status;
+    public Boolean getEnabled() {
+        return enabled;
     }
 
-    public void setStatus(Integer status) {
-        this.status = status;
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 
     public Integer getAgentType() {
@@ -289,7 +289,7 @@ public class AgentEntity extends Model<AgentEntity> {
         agent.setAvatar(avatar);
         agent.setAgentType(agentType != null ? agentType : AgentType.CHAT_ASSISTANT.getCode());
         agent.setUserId(userId);
-        agent.setStatus(AgentStatus.DRAFT.getCode()); // 初始状态为草稿
+        agent.setEnabled(true); // 默认启用
         agent.setCreatedAt(LocalDateTime.now());
         agent.setUpdatedAt(LocalDateTime.now());
         return agent;
@@ -319,18 +319,18 @@ public class AgentEntity extends Model<AgentEntity> {
     }
 
     /**
-     * 更新Agent状态
+     * 启用Agent
      */
-    public void updateStatus(Integer status) {
-        this.status = status;
+    public void enable() {
+        this.enabled = true;
         this.updatedAt = LocalDateTime.now();
     }
 
     /**
-     * 更新Agent状态（使用枚举）
+     * 禁用Agent
      */
-    public void updateStatus(AgentStatus status) {
-        this.status = status.getCode();
+    public void disable() {
+        this.enabled = false;
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -364,19 +364,12 @@ public class AgentEntity extends Model<AgentEntity> {
         dto.setTools(this.tools);
         dto.setKnowledgeBaseIds(this.knowledgeBaseIds);
         dto.setPublishedVersion(this.publishedVersion);
-        dto.setStatus(this.status);
+        dto.setEnabled(this.enabled);
         dto.setAgentType(this.agentType);
         dto.setUserId(this.userId);
         dto.setCreatedAt(this.createdAt);
         dto.setUpdatedAt(this.updatedAt);
         return dto;
-    }
-
-    /**
-     * 获取Agent状态
-     */
-    public AgentStatus getAgentStatus() {
-        return AgentStatus.fromCode(this.status);
     }
 
     /**

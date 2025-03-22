@@ -39,8 +39,8 @@ public class AgentAssembler {
         AgentType agentType = request.getAgentType();
         entity.setAgentType(agentType.getCode());
         
-        // 设置初始状态为草稿
-        entity.setStatus(AgentStatus.DRAFT.getCode());
+        // 设置初始状态为启用
+        entity.setEnabled(true);
         
         // 设置用户ID
         entity.setUserId(request.getUserId());
@@ -110,7 +110,7 @@ public class AgentAssembler {
         dto.setTools(entity.getTools());
         dto.setKnowledgeBaseIds(entity.getKnowledgeBaseIds());
         dto.setPublishedVersion(entity.getPublishedVersion());
-        dto.setStatus(entity.getStatus());
+        dto.setEnabled(entity.getEnabled());
         dto.setAgentType(entity.getAgentType());
         dto.setUserId(entity.getUserId());
         dto.setCreatedAt(entity.getCreatedAt());
