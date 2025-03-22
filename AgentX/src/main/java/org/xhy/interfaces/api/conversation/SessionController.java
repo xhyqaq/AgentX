@@ -10,6 +10,7 @@ import org.xhy.application.conversation.service.SessionAppService;
 import org.xhy.domain.conversation.model.MessageDTO;
 import org.xhy.domain.conversation.model.SessionDTO;
 import org.xhy.interfaces.api.common.Result;
+import org.xhy.interfaces.dto.conversation.*;
 
 import java.util.List;
 
@@ -39,10 +40,11 @@ public class SessionController {
      * 创建新会话
      */
     @PostMapping("/session")
-    public Result<SessionDTO> createSession(@RequestParam String title,
-            @RequestParam String userId,
-            @RequestParam(required = false) String description) {
-        SessionDTO session = sessionAppService.createSession(title, userId, description);
+    public Result<SessionDTO> createSession(@RequestBody CreateSessionRequest request) {
+        SessionDTO session = sessionAppService.createSession(
+                request.getTitle(), 
+                request.getUserId(), 
+                request.getDescription());
         return Result.success(session);
     }
 
@@ -78,9 +80,11 @@ public class SessionController {
      */
     @PutMapping("/session/{sessionId}")
     public Result<SessionDTO> updateSession(@PathVariable String sessionId,
-            @RequestParam String title,
-            @RequestParam(required = false) String description) {
-        return Result.success(sessionAppService.updateSession(sessionId, title, description));
+            @RequestBody UpdateSessionRequest request) {
+        return Result.success(sessionAppService.updateSession(
+                sessionId, 
+                request.getTitle(), 
+                request.getDescription()));
     }
 
     /**
@@ -119,27 +123,28 @@ public class SessionController {
     /**
      * 发送消息并获取流式回复
      */
-    @GetMapping("/chat/{sessionId}")
-    public SseEmitter chat(@PathVariable String sessionId, @RequestParam String content) {
-        return conversationAppService.chat("ae37ce1eba445259cc55c6740105c688", content);
+    @PostMapping("/chat/{sessionId}")
+    public SseEmitter chat(@PathVariable String sessionId, @RequestBody SendMessageRequest request) {
+        return conversationAppService.chat("ae37ce1eba445259cc55c6740105c688", request.getContent());
     }
 
     /**
      * 创建会话并发送第一条消息
      */
     @PostMapping("/session/create-and-chat")
-    public SseEmitter createAndChat(@RequestParam String title,
-            @RequestParam String userId,
-            @RequestParam String content) {
-        return conversationAppService.createSessionAndChat(title, userId, content);
+    public SseEmitter createAndChat(@RequestBody CreateAndChatRequest request) {
+        return conversationAppService.createSessionAndChat(
+                request.getTitle(), 
+                request.getUserId(), 
+                request.getContent());
     }
 
     /**
      * 发送消息并获取同步回复(非流式)
      */
     @PostMapping("/chat/{sessionId}/sync")
-    public ResponseEntity<MessageDTO> chatSync(@PathVariable String sessionId, @RequestParam String content) {
-        return ResponseEntity.ok(conversationAppService.chatSync(sessionId, content));
+    public ResponseEntity<MessageDTO> chatSync(@PathVariable String sessionId, @RequestBody SendMessageRequest request) {
+        return ResponseEntity.ok(conversationAppService.chatSync(sessionId, request.getContent()));
     }
 
     /**

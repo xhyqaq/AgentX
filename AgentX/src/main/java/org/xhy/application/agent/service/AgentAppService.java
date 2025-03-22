@@ -1,0 +1,169 @@
+package org.xhy.application.agent.service;
+
+import org.springframework.stereotype.Service;
+import org.xhy.application.agent.assembler.AgentAssembler;
+import org.xhy.domain.agent.model.AgentDTO;
+import org.xhy.domain.agent.model.AgentEntity;
+import org.xhy.domain.agent.model.AgentStatus;
+import org.xhy.domain.agent.model.AgentVersionDTO;
+import org.xhy.domain.agent.model.AgentVersionEntity;
+import org.xhy.domain.agent.service.AgentService;
+import org.xhy.interfaces.dto.agent.CreateAgentRequest;
+import org.xhy.interfaces.dto.agent.PublishAgentVersionRequest;
+import org.xhy.interfaces.dto.agent.UpdateAgentBasicInfoRequest;
+import org.xhy.interfaces.dto.agent.UpdateAgentConfigRequest;
+import org.xhy.interfaces.dto.agent.UpdateAgentRequest;
+
+import java.util.List;
+
+/**
+ * Agent应用服务，用于适配领域层的Agent服务
+ * 职责：
+ * 1. 接收和验证来自接口层的请求
+ * 2. 将请求转换为领域对象或参数
+ * 3. 调用领域服务执行业务逻辑
+ * 4. 转换和返回结果给接口层
+ */
+@Service
+public class AgentAppService {
+
+    private final AgentService agentService;
+
+    public AgentAppService(AgentService agentService) {
+        this.agentService = agentService;
+    }
+
+    /**
+     * 创建新Agent
+     */
+    public AgentDTO createAgent(CreateAgentRequest request) {
+        // 在应用层验证请求
+        request.validate();
+        
+        // 使用组装器创建领域实体
+        AgentEntity entity = AgentAssembler.toEntity(request);
+        
+        // 调用领域服务
+        return agentService.createAgent(entity);
+    }
+
+    /**
+     * 获取Agent信息
+     */
+    public AgentDTO getAgent(String agentId) {
+        return agentService.getAgent(agentId);
+    }
+
+    /**
+     * 获取用户的所有Agent
+     */
+    public List<AgentDTO> getUserAgents(String userId) {
+        return agentService.getUserAgents(userId);
+    }
+
+    /**
+     * 获取用户特定状态的Agent
+     */
+    public List<AgentDTO> getUserAgentsByStatus(String userId, AgentStatus status) {
+        return agentService.getUserAgentsByStatus(userId, status);
+    }
+
+    /**
+     * 获取已上架的Agent列表
+     */
+    public List<AgentDTO> getPublishedAgents() {
+        return agentService.getPublishedAgents();
+    }
+
+    /**
+     * 获取待审核的Agent列表
+     */
+    public List<AgentDTO> getPendingReviewAgents() {
+        return agentService.getPendingReviewAgents();
+    }
+
+    /**
+     * 更新Agent信息（基本信息和配置合并更新）
+     */
+    public AgentDTO updateAgent(String agentId, UpdateAgentRequest request) {
+        // 在应用层验证请求
+        request.validate();
+
+
+        // 使用组装器创建更新实体
+        AgentEntity updateEntity = AgentAssembler.toEntity(request);
+        
+        // 调用领域服务更新Agent
+        return agentService.updateAgent(agentId, updateEntity);
+    }
+
+
+    /**
+     * 更新Agent状态
+     */
+    public AgentDTO updateAgentStatus(String agentId, AgentStatus status) {
+        return agentService.updateAgentStatus(agentId, status);
+    }
+
+    /**
+     * 删除Agent
+     */
+    public void deleteAgent(String agentId) {
+        agentService.deleteAgent(agentId);
+    }
+
+    /**
+     * 搜索Agent
+     */
+    public List<AgentDTO> searchAgents(String userId, String keyword) {
+        return agentService.searchAgents(userId, keyword);
+    }
+
+    /**
+     * 发布Agent版本
+     */
+    public AgentVersionDTO publishAgentVersion(String agentId, PublishAgentVersionRequest request) {
+        // 在应用层验证请求
+        request.validate();
+        
+        // 获取当前Agent
+        AgentDTO currentAgentDTO = agentService.getAgent(agentId);
+        
+        // 获取最新版本，检查版本号大小
+        AgentVersionDTO latestVersion = agentService.getLatestAgentVersion(agentId);
+        if (latestVersion != null) {
+            // 检查版本号是否大于上一个版本
+            if (!request.isVersionGreaterThan(latestVersion.getVersionNumber())) {
+                throw new IllegalArgumentException("新版本号(" + request.getVersionNumber() + 
+                        ")必须大于当前最新版本号(" + latestVersion.getVersionNumber() + ")");
+            }
+        }
+
+        // 使用组装器创建版本实体
+        AgentVersionEntity versionEntity = AgentAssembler.createVersionEntity(currentAgentDTO.toEntity(), request);
+        
+        // 调用领域服务发布版本
+        return agentService.publishAgentVersion(agentId, versionEntity);
+    }
+
+    /**
+     * 获取Agent的所有版本
+     */
+    public List<AgentVersionDTO> getAgentVersions(String agentId) {
+        return agentService.getAgentVersions(agentId);
+    }
+
+    /**
+     * 获取Agent的特定版本
+     */
+    public AgentVersionDTO getAgentVersion(String agentId, String versionNumber) {
+        return agentService.getAgentVersion(agentId, versionNumber);
+    }
+
+    /**
+     * 获取Agent的最新版本
+     */
+    public AgentVersionDTO getLatestAgentVersion(String agentId) {
+        return agentService.getLatestAgentVersion(agentId);
+    }
+} 

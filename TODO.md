@@ -24,7 +24,7 @@
 
 ## 阶段1.5：Agent管理
 - [ ] Agent基础功能
-  - [ ] Agent数据模型设计
+  - [x] Agent数据模型设计
   - [ ] Agent创建、修改、删除、查询API
   - [ ] Agent与会话关联关系实现
 - [ ] Agent高级功能
