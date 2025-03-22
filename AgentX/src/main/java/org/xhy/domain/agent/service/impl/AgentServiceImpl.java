@@ -11,6 +11,7 @@ import org.xhy.domain.agent.repository.AgentVersionRepository;
 import org.xhy.domain.agent.service.AgentService;
 import org.xhy.domain.common.exception.BusinessException;
 import org.xhy.domain.common.util.ValidationUtils;
+import org.xhy.interfaces.dto.agent.SearchAgentsRequest;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -66,57 +67,35 @@ public class AgentServiceImpl implements AgentService {
     }
 
     /**
-     * 获取用户的所有Agent
+     * 获取用户的Agent列表，支持状态和名称过滤
      */
     @Override
-    public List<AgentDTO> getUserAgents(String userId) {
+    public List<AgentDTO> getUserAgents(String userId, SearchAgentsRequest searchAgentsRequest) {
         // 参数校验
         ValidationUtils.notEmpty(userId, "userId");
 
-        // 使用LambdaQueryWrapper替代原来的findByUserIdOrderByUpdatedAtDesc
+        // 创建基础查询条件
         LambdaQueryWrapper<AgentEntity> queryWrapper = Wrappers.<AgentEntity>lambdaQuery()
                 .eq(AgentEntity::getUserId, userId)
+                .like(!StringUtils.isEmpty(searchAgentsRequest.getName()),AgentEntity::getName,searchAgentsRequest.getName())
                 .orderByDesc(AgentEntity::getUpdatedAt);
 
+
+        // 执行查询并返回结果
         List<AgentEntity> agents = agentRepository.selectList(queryWrapper);
         return agents.stream().map(AgentEntity::toDTO).collect(Collectors.toList());
     }
 
     /**
-     * 获取用户特定状态的Agent
-     * 注意：现在使用enabled字段，不再使用status
+     * 获取已上架的Agent列表，支持名称搜索
+     * 当name为空时返回所有已上架Agent
      */
     @Override
-    public List<AgentDTO> getUserAgentsByStatus(String userId, AgentStatus status) {
-        // 参数校验
-        ValidationUtils.notEmpty(userId, "userId");
-        ValidationUtils.notNull(status, "status");
+    public List<AgentVersionDTO> getPublishedAgentsByName(SearchAgentsRequest searchAgentsRequest) {
+        // 使用带名称和状态条件的查询
+        List<AgentVersionEntity> latestVersions = agentVersionRepository.selectLatestVersionsByNameAndStatus(searchAgentsRequest.getName(),
+                PublishStatus.PUBLISHED.getCode());
 
-        // 由于状态字段变更，这里需要转换查询逻辑
-        // 这里是简化处理，实际可能需要根据业务需求调整
-        boolean enabled = true; // 默认查询启用的Agent
-        if (status == AgentStatus.DRAFT || status == AgentStatus.UNPUBLISHED) {
-            enabled = false; // 如果是草稿或下架状态，查询禁用的Agent
-        }
-
-        LambdaQueryWrapper<AgentEntity> queryWrapper = Wrappers.<AgentEntity>lambdaQuery()
-                .eq(AgentEntity::getUserId, userId)
-                .eq(AgentEntity::getEnabled, enabled)
-                .orderByDesc(AgentEntity::getUpdatedAt);
-
-        List<AgentEntity> agents = agentRepository.selectList(queryWrapper);
-        return agents.stream().map(AgentEntity::toDTO).collect(Collectors.toList());
-    }
-
-    /**
-     * 获取已上架的Agent列表
-     * 注意：现在需要查询发布状态为PUBLISHED的版本，并且只返回enabled=true的Agent
-     */
-    @Override
-    public List<AgentVersionDTO> getPublishedAgents() {
-        // 获取所有已发布状态的最新版本
-        List<AgentVersionEntity> latestVersions = agentVersionRepository
-                .selectLatestVersionsByStatus(PublishStatus.PUBLISHED.getCode());
         // 组合助理和版本信息
         return combineAgentsWithVersions(latestVersions);
     }
@@ -218,19 +197,6 @@ public class AgentServiceImpl implements AgentService {
         // 删除版本
         agentVersionRepository.delete(Wrappers.<AgentVersionEntity>lambdaQuery()
                 .eq(AgentVersionEntity::getAgentId, agentId));
-    }
-
-    /**
-     * 搜索Agent
-     * 
-     * 先根据条件查询已发布的助理，查出来后查询对应的助理的开启状态
-     */
-    @Override
-    public List<AgentVersionDTO> searchAgents(String name) {
-        // 使用新方法，直接获取每个Agent的最新版本
-        List<AgentVersionEntity> latestVersions = agentVersionRepository.selectLatestVersionsByName(name);
-        // 组合助理和版本信息
-        return combineAgentsWithVersions(latestVersions);
     }
 
     /**

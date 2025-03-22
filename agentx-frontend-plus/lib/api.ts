@@ -1,4 +1,3 @@
-// 对话API接口
 export async function streamChat(message: string, sessionId?: string) {
   if (!sessionId) {
     throw new Error("Session ID is required")

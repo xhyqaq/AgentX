@@ -45,10 +45,10 @@ export function NavigationBar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
-  // 检查当前路径是否匹配导航项
+  // Check if current path matches the menu item's href
   const isActiveRoute = (href: string) => {
     if (href === "/explore" && pathname === "/") {
-      return true // 主页也算作探索页
+      return true // Main page also counts as explore
     }
     return pathname === href || pathname.startsWith(`${href}/`)
   }

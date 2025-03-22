@@ -41,25 +41,23 @@ public class PortalAgentController {
     }
 
     /**
-     * 获取用户的Agent列表
+     * 获取用户的Agent列表，支持可选的状态和名称过滤
      */
     @GetMapping("/user/{userId}")
-    public Result<List<AgentDTO>> getUserAgents(@PathVariable String userId,
-            @RequestParam(required = false) Integer statusCode) {
-        if (statusCode != null) {
-            AgentStatus status = AgentStatus.fromCode(statusCode);
-            return Result.success(agentAppService.getUserAgentsByStatus(userId, status));
-        } else {
-            return Result.success(agentAppService.getUserAgents(userId));
-        }
+    public Result<List<AgentDTO>> getUserAgents(
+            @PathVariable String userId,
+            SearchAgentsRequest searchAgentsRequest
+            ) {
+
+        return Result.success(agentAppService.getUserAgents(userId, searchAgentsRequest));
     }
 
     /**
-     * 获取已上架的Agent列表
+     * 获取已上架的Agent列表，支持名称搜索
      */
     @GetMapping("/published")
-    public Result<List<AgentVersionDTO>> getPublishedAgents() {
-        return Result.success(agentAppService.getPublishedAgents());
+    public Result<List<AgentVersionDTO>> getPublishedAgents(SearchAgentsRequest searchAgentsRequest) {
+        return Result.success(agentAppService.getPublishedAgentsByName(searchAgentsRequest));
     }
 
     /**
@@ -88,13 +86,7 @@ public class PortalAgentController {
         return Result.success(null);
     }
 
-    /**
-     * 搜索Agent
-     */
-    @PostMapping("/search")
-    public Result<List<AgentVersionDTO>> searchAgents(@RequestBody SearchAgentsRequest request) {
-        return Result.success(agentAppService.searchAgents(request.getName()));
-    }
+
 
     /**
      * 发布Agent版本

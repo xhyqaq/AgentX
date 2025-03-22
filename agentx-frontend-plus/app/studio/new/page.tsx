@@ -20,7 +20,10 @@ import { Slider } from "@/components/ui/slider"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import AgentAPI from "../../api/agent"
+
+// 在文件顶部添加导入
+import { createAgent } from "@/lib/agent-service"
+import { API_CONFIG } from "@/lib/api-config"
 
 // 应用类型定义
 type AgentType = "chat" | "agent"
@@ -29,15 +32,15 @@ type AgentType = "chat" | "agent"
 const agentTypes = [
   {
     id: "chat",
-    name: "聊天助手",
+    name: "聊天助理",
     description: "可使用工具和知识库的对话机器人，具有记忆功能",
     icon: MessageCircle,
     color: "bg-blue-100 text-blue-600",
   },
   {
     id: "agent",
-    name: "Agent",
-    description: "专注于使用工具处理复杂任务的智能助手，无记忆功能",
+    name: "功能性助理",
+    description: "专注于使用工具处理复杂任务的智能助理，无记忆功能",
     icon: Bot,
     color: "bg-purple-100 text-purple-600",
   },
@@ -201,7 +204,7 @@ export default function CreateAgentPage() {
     fileInputRef.current?.click()
   }
 
-  // 处理创建应用
+  // 在handleCreateAgent函数中替换模拟API调用部分
   const handleCreateAgent = async () => {
     if (!formData.name.trim()) {
       toast({
@@ -214,35 +217,49 @@ export default function CreateAgentPage() {
     setIsSubmitting(true)
 
     try {
-      // 假设当前用户ID，实际应用中应从认证系统获取
-      const currentUserId = "1"
-      
-      // 准备创建请求
-      const createRequest = {
+      // 准备API请求参数
+      const agentData = {
         name: formData.name,
-        description: formData.description,
-        userId: currentUserId,
-        avatarUrl: formData.avatar || undefined,
-        configuration: {
-          type: selectedType,
-          systemPrompt: formData.systemPrompt,
-          welcomeMessage: formData.welcomeMessage,
-          modelConfig: formData.modelConfig,
-          tools: formData.tools,
-          knowledgeBaseIds: formData.knowledgeBaseIds
-        }
+        avatar: formData.avatar,
+        description: formData.description || "",
+        agentType: selectedType === "chat" ? "CHAT_ASSISTANT" : "FUNCTIONAL_AGENT",
+        systemPrompt: selectedType === "chat" ? formData.systemPrompt : "",
+        welcomeMessage: selectedType === "chat" ? formData.welcomeMessage : "",
+        modelConfig: {
+          modelName: formData.modelConfig.model,
+          temperature: formData.modelConfig.temperature,
+          maxTokens: formData.modelConfig.maxTokens,
+        },
+        tools: formData.tools.map((toolId) => {
+          const tool = toolOptions.find((t) => t.id === toolId)
+          return {
+            id: toolId,
+            name: tool?.name || toolId,
+            description: tool?.description || "",
+          }
+        }),
+        knowledgeBaseIds: selectedType === "chat" ? formData.knowledgeBaseIds : [],
+        userId: API_CONFIG.CURRENT_USER_ID,
       }
-      
+
       // 调用API创建Agent
-      const createdAgent = await AgentAPI.createAgent(createRequest)
+      const response = await createAgent(agentData)
 
-      toast({
-        title: "创建成功",
-        description: `已创建${selectedType === "chat" ? "聊天助手" : "Agent"}: ${formData.name}`,
-      })
+      if (response.code === 200) {
+        toast({
+          title: "创建成功",
+          description: `已创建${selectedType === "chat" ? "聊天助理" : "功能性助理"}: ${formData.name}`,
+        })
 
-      // 创建成功后跳转
-      router.push("/studio")
+        // 创建成功后跳转
+        router.push("/studio")
+      } else {
+        toast({
+          title: "创建失败",
+          description: response.message,
+          variant: "destructive",
+        })
+      }
     } catch (error) {
       console.error("创建失败:", error)
       toast({
@@ -289,7 +306,7 @@ export default function CreateAgentPage() {
         {/* 左侧表单 */}
         <div className="w-3/5 p-8 overflow-auto">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">创建{selectedType === "chat" ? "聊天助手" : "Agent"}</h1>
+            <h1 className="text-2xl font-bold">创建{selectedType === "chat" ? "聊天助理" : "功能性助理"}</h1>
             <Button variant="ghost" size="icon" asChild>
               <Link href="/studio">
                 <X className="h-5 w-5" />
@@ -343,7 +360,7 @@ export default function CreateAgentPage() {
                     </Label>
                     <Input
                       id="agent-name"
-                      placeholder={`给你的${selectedType === "chat" ? "聊天助手" : "Agent"}起个名字`}
+                      placeholder={`给你的${selectedType === "chat" ? "聊天助理" : "功能性助理"}起个名字`}
                       value={formData.name}
                       onChange={(e) => updateFormField("name", e.target.value)}
                       className="mb-2"
@@ -386,7 +403,7 @@ export default function CreateAgentPage() {
               <div>
                 <h2 className="text-lg font-medium mb-2">描述</h2>
                 <Textarea
-                  placeholder={`输入${selectedType === "chat" ? "聊天助手" : "Agent"}的描述`}
+                  placeholder={`输入${selectedType === "chat" ? "聊天助理" : "功能性助理"}的描述`}
                   value={formData.description}
                   onChange={(e) => updateFormField("description", e.target.value)}
                   rows={4}
@@ -461,7 +478,7 @@ export default function CreateAgentPage() {
               <div>
                 <h2 className="text-lg font-medium mb-2">选择模型</h2>
                 <p className="text-sm text-muted-foreground mb-2">
-                  选择{selectedType === "chat" ? "聊天助手" : "Agent"}使用的大语言模型
+                  选择{selectedType === "chat" ? "聊天助理" : "功能性助理"}使用的大语言模型
                 </p>
                 <Select value={formData.modelConfig.model} onValueChange={(value) => updateModelConfig("model", value)}>
                   <SelectTrigger className="w-full">
@@ -525,7 +542,7 @@ export default function CreateAgentPage() {
               <div>
                 <h2 className="text-lg font-medium mb-2">可用工具</h2>
                 <p className="text-sm text-muted-foreground mb-2">
-                  选择{selectedType === "chat" ? "聊天助手" : "Agent"}可以使用的工具
+                  选择{selectedType === "chat" ? "聊天助理" : "功能性助理"}可以使用的工具
                 </p>
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   {toolOptions.map((tool) => (
@@ -593,7 +610,7 @@ export default function CreateAgentPage() {
           <div className="mb-6">
             <h2 className="text-xl font-semibold">预览</h2>
             <p className="text-muted-foreground">
-              {selectedType === "chat" ? "查看聊天助手在对话中的表现" : "查看Agent处理复杂任务的界面"}
+              {selectedType === "chat" ? "查看聊天助理在对话中的表现" : "查看功能性助理处理复杂任务的界面"}
             </p>
           </div>
 
@@ -608,7 +625,7 @@ export default function CreateAgentPage() {
                       {formData.name ? formData.name.charAt(0).toUpperCase() : "🤖"}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="font-medium">{formData.name || "新建聊天助手"}</span>
+                  <span className="font-medium">{formData.name || "新建聊天助理"}</span>
                 </div>
                 <Badge variant="outline">{formData.modelConfig.model}</Badge>
               </div>
@@ -686,7 +703,7 @@ export default function CreateAgentPage() {
                       {formData.name ? formData.name.charAt(0).toUpperCase() : "🤖"}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="font-medium">{formData.name || "新建Agent"}</span>
+                  <span className="font-medium">{formData.name || "新建功能性助理"}</span>
                 </div>
                 <Badge variant="outline">{formData.modelConfig.model}</Badge>
               </div>
@@ -792,7 +809,7 @@ export default function CreateAgentPage() {
               <CardContent className="p-4 space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">类型</span>
-                  <span className="text-sm font-medium">{selectedType === "chat" ? "聊天助手" : "Agent"}</span>
+                  <span className="text-sm font-medium">{selectedType === "chat" ? "聊天助理" : "功能性助理"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">模型</span>

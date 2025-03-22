@@ -60,7 +60,7 @@ export interface SearchAgentsRequest {
 
 export interface PublishAgentVersionRequest {
   versionNumber: string;
-  configuration: any;
+  changeLog: string;
 }
 
 // Agent API服务

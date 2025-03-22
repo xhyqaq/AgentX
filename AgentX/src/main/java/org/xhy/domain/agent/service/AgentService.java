@@ -6,11 +6,7 @@ import org.xhy.domain.agent.model.AgentStatus;
 import org.xhy.domain.agent.model.AgentVersionDTO;
 import org.xhy.domain.agent.model.AgentVersionEntity;
 import org.xhy.domain.agent.model.PublishStatus;
-import org.xhy.interfaces.dto.agent.CreateAgentRequest;
-import org.xhy.interfaces.dto.agent.PublishAgentVersionRequest;
-import org.xhy.interfaces.dto.agent.UpdateAgentBasicInfoRequest;
-import org.xhy.interfaces.dto.agent.UpdateAgentConfigRequest;
-import org.xhy.interfaces.dto.agent.UpdateAgentRequest;
+import org.xhy.interfaces.dto.agent.*;
 
 import java.util.List;
 
@@ -36,28 +32,20 @@ public interface AgentService {
     AgentDTO getAgent(String agentId);
 
     /**
-     * 获取用户的所有Agent
+     * 获取用户的Agent列表，支持状态和名称过滤
      * 
      * @param userId 用户ID，不能为空
-     * @return 用户的Agent列表
-     */
-    List<AgentDTO> getUserAgents(String userId);
-
-    /**
-     * 获取用户特定状态的Agent
-     * 
-     * @param userId 用户ID，不能为空
-     * @param status Agent状态，不能为空
+     * @param searchAgentsRequest 查询条件
      * @return 符合条件的Agent列表
      */
-    List<AgentDTO> getUserAgentsByStatus(String userId, AgentStatus status);
+    List<AgentDTO> getUserAgents(String userId, SearchAgentsRequest searchAgentsRequest);
+
 
     /**
-     * 获取已上架的Agent列表
-     * 
-     * @return 已上架的Agent列表
+     * 获取已上架的Agent列表，支持名称搜索
+     * 当name为空时返回所有已上架Agent
      */
-    List<AgentVersionDTO> getPublishedAgents();
+    List<AgentVersionDTO> getPublishedAgentsByName(SearchAgentsRequest name);
 
     /**
      * 获取待审核的Agent列表
@@ -90,13 +78,6 @@ public interface AgentService {
      */
     void deleteAgent(String agentId);
 
-    /**
-     * 搜索Agent
-     * 
-     * @param name 名称
-     * @return 搜索结果Agent列表
-     */
-    List<AgentVersionDTO> searchAgents(String name);
 
     /**
      * 发布Agent版本

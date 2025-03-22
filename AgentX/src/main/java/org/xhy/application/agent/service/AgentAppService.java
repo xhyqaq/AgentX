@@ -8,10 +8,7 @@ import org.xhy.domain.agent.model.AgentStatus;
 import org.xhy.domain.agent.model.AgentVersionDTO;
 import org.xhy.domain.agent.model.AgentVersionEntity;
 import org.xhy.domain.agent.service.AgentService;
-import org.xhy.interfaces.dto.agent.CreateAgentRequest;
-import org.xhy.interfaces.dto.agent.PublishAgentVersionRequest;
-import org.xhy.interfaces.dto.agent.UpdateAgentRequest;
-import org.xhy.interfaces.dto.agent.ReviewAgentVersionRequest;
+import org.xhy.interfaces.dto.agent.*;
 import org.xhy.domain.agent.model.PublishStatus;
 
 import java.util.List;
@@ -55,25 +52,19 @@ public class AgentAppService {
     }
 
     /**
-     * 获取用户的所有Agent
+     * 获取用户的Agent列表，支持状态和名称过滤
      */
-    public List<AgentDTO> getUserAgents(String userId) {
-        return agentService.getUserAgents(userId);
+    public List<AgentDTO> getUserAgents(String userId, SearchAgentsRequest searchAgentsRequest) {
+        return agentService.getUserAgents(userId, searchAgentsRequest);
     }
 
     /**
-     * 获取用户特定状态的Agent
+     * 获取已上架的Agent列表，支持名称搜索
      */
-    public List<AgentDTO> getUserAgentsByStatus(String userId, AgentStatus status) {
-        return agentService.getUserAgentsByStatus(userId, status);
+    public List<AgentVersionDTO> getPublishedAgentsByName(SearchAgentsRequest searchAgentsRequest) {
+        return agentService.getPublishedAgentsByName(searchAgentsRequest);
     }
 
-    /**
-     * 获取已上架的Agent列表
-     */
-    public List<AgentVersionDTO> getPublishedAgents() {
-        return agentService.getPublishedAgents();
-    }
 
     /**
      * 获取待审核的Agent列表
@@ -108,13 +99,6 @@ public class AgentAppService {
      */
     public void deleteAgent(String agentId) {
         agentService.deleteAgent(agentId);
-    }
-
-    /**
-     * 搜索Agent
-     */
-    public List<AgentVersionDTO> searchAgents(String name) {
-        return agentService.searchAgents(name);
     }
 
     /**
