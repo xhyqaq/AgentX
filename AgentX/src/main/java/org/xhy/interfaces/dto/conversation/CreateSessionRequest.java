@@ -6,7 +6,6 @@ package org.xhy.interfaces.dto.conversation;
 public class CreateSessionRequest {
     
     private String title;
-    private String userId;
     private String description;
     
     // 构造方法
@@ -15,7 +14,6 @@ public class CreateSessionRequest {
     
     public CreateSessionRequest(String title, String userId, String description) {
         this.title = title;
-        this.userId = userId;
         this.description = description;
     }
     
@@ -26,14 +24,6 @@ public class CreateSessionRequest {
     
     public void setTitle(String title) {
         this.title = title;
-    }
-    
-    public String getUserId() {
-        return userId;
-    }
-    
-    public void setUserId(String userId) {
-        this.userId = userId;
     }
     
     public String getDescription() {

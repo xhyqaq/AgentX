@@ -9,6 +9,7 @@ import org.xhy.application.conversation.service.MessageAppService;
 import org.xhy.application.conversation.service.SessionAppService;
 import org.xhy.domain.conversation.model.MessageDTO;
 import org.xhy.domain.conversation.model.SessionDTO;
+import org.xhy.infrastructure.auth.UserContext;
 import org.xhy.interfaces.api.common.Result;
 import org.xhy.interfaces.dto.conversation.*;
 
@@ -41,9 +42,10 @@ public class PortalSessionController {
      */
     @PostMapping("/session")
     public Result<SessionDTO> createSession(@RequestBody CreateSessionRequest request) {
+        String userId = UserContext.getCurrentUserId();
         SessionDTO session = sessionAppService.createSession(
-                request.getTitle(), 
-                request.getUserId(), 
+                request.getTitle(),
+                userId,
                 request.getDescription());
         return Result.success(session);
     }
@@ -52,8 +54,8 @@ public class PortalSessionController {
      * 获取会话列表
      */
     @GetMapping("/session")
-    public Result<List<SessionDTO>> getSessions(@RequestParam String userId,
-            @RequestParam(required = false) Boolean archived) {
+    public Result<List<SessionDTO>> getSessions(@RequestParam(required = false) Boolean archived) {
+        String userId = UserContext.getCurrentUserId();
         List<SessionDTO> sessions;
         if (archived != null) {
             if (archived) {
@@ -82,8 +84,8 @@ public class PortalSessionController {
     public Result<SessionDTO> updateSession(@PathVariable String sessionId,
             @RequestBody UpdateSessionRequest request) {
         return Result.success(sessionAppService.updateSession(
-                sessionId, 
-                request.getTitle(), 
+                sessionId,
+                request.getTitle(),
                 request.getDescription()));
     }
 
@@ -134,8 +136,8 @@ public class PortalSessionController {
     @PostMapping("/session/create-and-chat")
     public SseEmitter createAndChat(@RequestBody CreateAndChatRequest request) {
         return conversationAppService.createSessionAndChat(
-                request.getTitle(), 
-                request.getUserId(), 
+                request.getTitle(),
+                request.getUserId(),
                 request.getContent());
     }
 
@@ -143,7 +145,8 @@ public class PortalSessionController {
      * 发送消息并获取同步回复(非流式)
      */
     @PostMapping("/chat/{sessionId}/sync")
-    public ResponseEntity<MessageDTO> chatSync(@PathVariable String sessionId, @RequestBody SendMessageRequest request) {
+    public ResponseEntity<MessageDTO> chatSync(@PathVariable String sessionId,
+            @RequestBody SendMessageRequest request) {
         return ResponseEntity.ok(conversationAppService.chatSync(sessionId, request.getContent()));
     }
 
@@ -155,4 +158,4 @@ public class PortalSessionController {
         conversationAppService.clearContext(sessionId);
         return ResponseEntity.ok().build();
     }
-} 
+}

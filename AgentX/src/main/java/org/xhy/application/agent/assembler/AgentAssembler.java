@@ -27,7 +27,7 @@ public class AgentAssembler {
     /**
      * 将CreateAgentRequest转换为AgentEntity
      */
-    public static AgentEntity toEntity(CreateAgentRequest request) {
+    public static AgentEntity toEntity(CreateAgentRequest request,String userId) {
         AgentEntity entity = new AgentEntity();
         entity.setName(request.getName());
         entity.setDescription(request.getDescription());
@@ -38,12 +38,10 @@ public class AgentAssembler {
         // 设置Agent类型，默认为聊天助手类型
         AgentType agentType = request.getAgentType();
         entity.setAgentType(agentType.getCode());
-        
+        entity.setUserId(userId);
+
         // 设置初始状态为启用
         entity.setEnabled(true);
-        
-        // 设置用户ID
-        entity.setUserId(request.getUserId());
         
         // 处理模型配置
         if (request.getModelConfig() != null) {
@@ -69,7 +67,7 @@ public class AgentAssembler {
     /**
      * 将UpdateAgentRequest转换为AgentEntity
      */
-    public static AgentEntity toEntity(UpdateAgentRequest request) {
+    public static AgentEntity toEntity(UpdateAgentRequest request,String userId) {
         AgentEntity entity = new AgentEntity();
         entity.setName(request.getName());
         entity.setDescription(request.getDescription());
@@ -79,7 +77,8 @@ public class AgentAssembler {
         entity.setModelConfig(request.getModelConfig());
         entity.setTools(request.getTools());
         entity.setKnowledgeBaseIds(request.getKnowledgeBaseIds());
-        
+        entity.setUserId(userId);
+
         return entity;
     }
 

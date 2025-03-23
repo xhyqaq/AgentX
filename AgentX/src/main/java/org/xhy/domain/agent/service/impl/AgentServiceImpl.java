@@ -1,6 +1,7 @@
 package org.xhy.domain.agent.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import org.springframework.stereotype.Service;
@@ -55,11 +56,16 @@ public class AgentServiceImpl implements AgentService {
      * 获取单个Agent信息
      */
     @Override
-    public AgentDTO getAgent(String agentId) {
+    public AgentDTO getAgent(String agentId, String userId) {
         // 参数校验
         ValidationUtils.notEmpty(agentId, "agentId");
+        ValidationUtils.notEmpty(userId, "userId");
 
-        AgentEntity agent = agentRepository.selectById(agentId);
+        // 需要根据 agentId 和 userId 作为条件进行查询
+        LambdaQueryWrapper<AgentEntity> wrapper = Wrappers.<AgentEntity>lambdaQuery()
+                .eq(AgentEntity::getId, agentId)
+                .eq(AgentEntity::getUserId, userId);
+        AgentEntity agent = agentRepository.selectOne(wrapper);
         if (agent == null) {
             throw new BusinessException("Agent不存在: " + agentId);
         }
@@ -77,9 +83,9 @@ public class AgentServiceImpl implements AgentService {
         // 创建基础查询条件
         LambdaQueryWrapper<AgentEntity> queryWrapper = Wrappers.<AgentEntity>lambdaQuery()
                 .eq(AgentEntity::getUserId, userId)
-                .like(!StringUtils.isEmpty(searchAgentsRequest.getName()),AgentEntity::getName,searchAgentsRequest.getName())
+                .like(!StringUtils.isEmpty(searchAgentsRequest.getName()), AgentEntity::getName,
+                        searchAgentsRequest.getName())
                 .orderByDesc(AgentEntity::getUpdatedAt);
-
 
         // 执行查询并返回结果
         List<AgentEntity> agents = agentRepository.selectList(queryWrapper);
@@ -93,7 +99,8 @@ public class AgentServiceImpl implements AgentService {
     @Override
     public List<AgentVersionDTO> getPublishedAgentsByName(SearchAgentsRequest searchAgentsRequest) {
         // 使用带名称和状态条件的查询
-        List<AgentVersionEntity> latestVersions = agentVersionRepository.selectLatestVersionsByNameAndStatus(searchAgentsRequest.getName(),
+        List<AgentVersionEntity> latestVersions = agentVersionRepository.selectLatestVersionsByNameAndStatus(
+                searchAgentsRequest.getName(),
                 PublishStatus.PUBLISHED.getCode());
 
         // 组合助理和版本信息
@@ -134,25 +141,14 @@ public class AgentServiceImpl implements AgentService {
         ValidationUtils.notEmpty(agentId, "agentId");
         ValidationUtils.notNull(updateEntity, "updateEntity");
         ValidationUtils.notEmpty(updateEntity.getName(), "name");
+        ValidationUtils.notEmpty(updateEntity.getUserId(), "userId");
 
-        AgentEntity agent = agentRepository.selectById(agentId);
-        if (agent == null) {
-            throw new BusinessException("Agent不存在: " + agentId);
-        }
-
-        // 更新基本信息和配置信息
-        agent.setName(updateEntity.getName());
-        agent.setDescription(updateEntity.getDescription());
-        agent.setAvatar(updateEntity.getAvatar());
-        agent.setSystemPrompt(updateEntity.getSystemPrompt());
-        agent.setWelcomeMessage(updateEntity.getWelcomeMessage());
-        agent.setModelConfig(updateEntity.getModelConfig());
-        agent.setTools(updateEntity.getTools());
-        agent.setKnowledgeBaseIds(updateEntity.getKnowledgeBaseIds());
-        agent.setUpdatedAt(LocalDateTime.now());
-
-        agentRepository.updateById(agent);
-        return agent.toDTO();
+        // 需要根据 agentId 和 userId 作为条件进行修改
+        LambdaUpdateWrapper<AgentEntity> wrapper = Wrappers.<AgentEntity>lambdaUpdate()
+                .eq(AgentEntity::getId, agentId)
+                .eq(AgentEntity::getUserId, updateEntity.getUserId());
+        agentRepository.update(updateEntity, wrapper);
+        return updateEntity.toDTO();
     }
 
     /**
@@ -185,18 +181,20 @@ public class AgentServiceImpl implements AgentService {
      */
     @Override
     @Transactional
-    public void deleteAgent(String agentId) {
+    public void deleteAgent(String agentId, String userId) {
         // 参数校验
         ValidationUtils.notEmpty(agentId, "agentId");
+        ValidationUtils.notEmpty(userId, "userId");
 
-        AgentEntity agent = agentRepository.selectById(agentId);
-        if (agent == null) {
-            throw new BusinessException("Agent不存在: " + agentId);
-        }
-        agentRepository.deleteById(agent);
+        // 根据agentId和userId删除即可，创建 wrapper
+        LambdaQueryWrapper<AgentEntity> wrapper = Wrappers.<AgentEntity>lambdaQuery()
+                .eq(AgentEntity::getId, agentId)
+                .eq(AgentEntity::getUserId, userId);
+        agentRepository.delete(wrapper);
         // 删除版本
         agentVersionRepository.delete(Wrappers.<AgentVersionEntity>lambdaQuery()
-                .eq(AgentVersionEntity::getAgentId, agentId));
+                .eq(AgentVersionEntity::getAgentId, agentId)
+                .eq(AgentVersionEntity::getUserId, userId));
     }
 
     /**
@@ -209,7 +207,7 @@ public class AgentServiceImpl implements AgentService {
         ValidationUtils.notEmpty(agentId, "agentId");
         ValidationUtils.notNull(versionEntity, "versionEntity");
         ValidationUtils.notEmpty(versionEntity.getVersionNumber(), "versionNumber");
-
+        ValidationUtils.notEmpty(versionEntity.getUserId(), "userId");
         AgentEntity agent = agentRepository.selectById(agentId);
         if (agent == null) {
             throw new BusinessException("Agent不存在: " + agentId);
@@ -218,6 +216,7 @@ public class AgentServiceImpl implements AgentService {
         // 查询最新版本号进行比较
         LambdaQueryWrapper<AgentVersionEntity> latestVersionQuery = Wrappers.<AgentVersionEntity>lambdaQuery()
                 .eq(AgentVersionEntity::getAgentId, agentId)
+                .eq(AgentVersionEntity::getUserId, versionEntity.getUserId())
                 .orderByDesc(AgentVersionEntity::getPublishedAt)
                 .last("LIMIT 1");
 
@@ -358,12 +357,13 @@ public class AgentServiceImpl implements AgentService {
      * 获取Agent的所有版本
      */
     @Override
-    public List<AgentVersionDTO> getAgentVersions(String agentId) {
+    public List<AgentVersionDTO> getAgentVersions(String agentId, String userId) {
         // 参数校验
         ValidationUtils.notEmpty(agentId, "agentId");
-
+        ValidationUtils.notEmpty(userId, "userId");
         LambdaQueryWrapper<AgentVersionEntity> queryWrapper = Wrappers.<AgentVersionEntity>lambdaQuery()
                 .eq(AgentVersionEntity::getAgentId, agentId)
+                .eq(AgentVersionEntity::getUserId, userId)
                 .orderByDesc(AgentVersionEntity::getPublishedAt);
 
         List<AgentVersionEntity> versions = agentVersionRepository.selectList(queryWrapper);

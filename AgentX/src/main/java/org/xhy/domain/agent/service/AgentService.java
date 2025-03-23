@@ -29,17 +29,16 @@ public interface AgentService {
      * @param agentId Agent ID，不能为空
      * @return Agent信息
      */
-    AgentDTO getAgent(String agentId);
+    AgentDTO getAgent(String agentId, String userId);
 
     /**
      * 获取用户的Agent列表，支持状态和名称过滤
      * 
-     * @param userId 用户ID，不能为空
+     * @param userId              用户ID，不能为空
      * @param searchAgentsRequest 查询条件
      * @return 符合条件的Agent列表
      */
     List<AgentDTO> getUserAgents(String userId, SearchAgentsRequest searchAgentsRequest);
-
 
     /**
      * 获取已上架的Agent列表，支持名称搜索
@@ -75,9 +74,9 @@ public interface AgentService {
      * 删除Agent
      * 
      * @param agentId Agent ID，不能为空
+     * @param userId  用户ID，不能为空
      */
-    void deleteAgent(String agentId);
-
+    void deleteAgent(String agentId, String userId);
 
     /**
      * 发布Agent版本
@@ -110,9 +109,10 @@ public interface AgentService {
      * 获取Agent的所有版本
      * 
      * @param agentId Agent ID，不能为空
+     * @param userId  用户ID，不能为空
      * @return 版本列表
      */
-    List<AgentVersionDTO> getAgentVersions(String agentId);
+    List<AgentVersionDTO> getAgentVersions(String agentId, String userId);
 
     /**
      * 获取Agent的特定版本
