@@ -2,9 +2,8 @@ package org.xhy.interfaces.api.portal.agent;
 
 import org.springframework.web.bind.annotation.*;
 import org.xhy.application.agent.service.AgentAppService;
-import org.xhy.domain.agent.model.AgentDTO;
-import org.xhy.domain.agent.model.AgentStatus;
-import org.xhy.domain.agent.model.AgentVersionDTO;
+import org.xhy.domain.agent.dto.AgentDTO;
+import org.xhy.domain.agent.dto.AgentVersionDTO;
 import org.xhy.infrastructure.auth.UserContext;
 import org.xhy.interfaces.api.common.Result;
 import org.xhy.interfaces.dto.agent.*;

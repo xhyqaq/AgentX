@@ -1,8 +1,8 @@
 package org.xhy.interfaces.dto.agent;
 
-import org.xhy.domain.agent.model.PublishStatus;
-import org.xhy.domain.common.util.ValidationUtils;
-import org.xhy.domain.common.exception.ParamValidationException;
+import org.xhy.domain.agent.constant.PublishStatus;
+import org.xhy.infrastructure.util.ValidationUtils;
+import org.xhy.infrastructure.exception.ParamValidationException;
 
 /**
  * 审核/更新Agent版本状态的请求对象

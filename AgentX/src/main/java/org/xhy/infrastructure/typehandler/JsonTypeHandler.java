@@ -8,13 +8,12 @@ import org.postgresql.util.PGobject;
 import org.xhy.domain.agent.model.AgentTool;
 import org.xhy.domain.agent.model.ModelConfig;
 import org.xhy.infrastructure.util.JsonUtils;
-import org.xhy.domain.common.exception.ParamValidationException;
+import org.xhy.infrastructure.exception.ParamValidationException;
 
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

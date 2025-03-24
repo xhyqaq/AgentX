@@ -1,7 +1,7 @@
 package org.xhy.interfaces.dto.agent;
 
 import java.util.regex.Pattern;
-import org.xhy.domain.common.exception.ParamValidationException;
+import org.xhy.infrastructure.exception.ParamValidationException;
 
 /**
  * 发布Agent版本请求

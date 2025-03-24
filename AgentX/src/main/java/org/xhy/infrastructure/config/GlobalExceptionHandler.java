@@ -9,9 +9,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.xhy.domain.common.exception.BusinessException;
-import org.xhy.domain.common.exception.EntityNotFoundException;
-import org.xhy.domain.common.exception.ParamValidationException;
+import org.xhy.infrastructure.exception.BusinessException;
+import org.xhy.infrastructure.exception.EntityNotFoundException;
+import org.xhy.infrastructure.exception.ParamValidationException;
 import org.xhy.interfaces.api.common.Result;
 
 import javax.servlet.http.HttpServletRequest;
