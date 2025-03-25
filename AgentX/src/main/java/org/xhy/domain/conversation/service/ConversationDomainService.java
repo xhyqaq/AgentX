@@ -63,8 +63,7 @@ public class ConversationDomainService {
      */
     public List<MessageDTO> getConversationMessages(String sessionId) {
         List<MessageEntity> messageEntities = messageRepository.selectList(
-                Wrappers.<MessageEntity>lambdaQuery().eq(MessageEntity::getSessionId, sessionId)
-                        .orderByDesc(MessageEntity::getCreatedAt));
+                Wrappers.<MessageEntity>lambdaQuery().eq(MessageEntity::getSessionId, sessionId));
         return messageEntities.stream().map(MessageAssembler::toDTO).collect(Collectors.toList());
     }
 

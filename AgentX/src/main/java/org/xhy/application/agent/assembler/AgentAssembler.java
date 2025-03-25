@@ -2,12 +2,9 @@ package org.xhy.application.agent.assembler;
 
 import org.xhy.domain.agent.model.AgentEntity;
 import org.xhy.domain.agent.constant.AgentType;
-import org.xhy.domain.agent.model.AgentVersionEntity;
 import org.xhy.domain.agent.dto.AgentDTO;
-import org.xhy.domain.agent.dto.AgentVersionDTO;
 import org.xhy.domain.agent.model.ModelConfig;
 import org.xhy.interfaces.dto.agent.CreateAgentRequest;
-import org.xhy.interfaces.dto.agent.PublishAgentVersionRequest;
 import org.xhy.interfaces.dto.agent.UpdateAgentRequest;
 
 import java.time.LocalDateTime;
@@ -74,6 +71,7 @@ public class AgentAssembler {
         entity.setTools(request.getTools());
         entity.setKnowledgeBaseIds(request.getKnowledgeBaseIds());
         entity.setUserId(userId);
+        entity.setEnabled(request.getEnabled());
 
         return entity;
     }

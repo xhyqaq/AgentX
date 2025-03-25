@@ -29,7 +29,7 @@ public class SessionDomainService {
      */
     public List<SessionDTO> getSessionsByAgentId(String agentId) {
         List<SessionEntity> sessions = sessionRepository.selectList(Wrappers.<SessionEntity>lambdaQuery()
-                .eq(SessionEntity::getAgentId, agentId));
+                .eq(SessionEntity::getAgentId, agentId).orderByDesc(SessionEntity::getCreatedAt));
         return sessions.stream().map(SessionAssembler::toDTO).collect(Collectors.toList());
     }
 

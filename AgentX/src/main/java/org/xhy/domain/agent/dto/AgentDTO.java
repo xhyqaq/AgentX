@@ -66,7 +66,7 @@ public class AgentDTO {
     /**
      * Agent状态：true-启用，false-禁用
      */
-    private Boolean enabled;
+    private Boolean enabled = Boolean.TRUE;
 
     /**
      * Agent类型：1-聊天助手, 2-功能性Agent
