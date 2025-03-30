@@ -1,15 +1,18 @@
 package org.xhy.infrastructure.config;
 
+import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.xhy.domain.plugins.config.PluginConfig;
 import org.xhy.infrastructure.exception.BusinessException;
 import org.xhy.infrastructure.exception.EntityNotFoundException;
 import org.xhy.infrastructure.exception.ParamValidationException;
@@ -86,6 +89,27 @@ public class GlobalExceptionHandler {
 
         logger.error("表单绑定异常: {}, URL: {}", errorMessage, request.getRequestURL(), e);
         return Result.badRequest(errorMessage);
+    }
+
+    /**
+     * 处理请求体缺失或格式错误异常
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleHttpMessageNotReadableException(HttpMessageNotReadableException e, HttpServletRequest request) {
+        logger.error("请求体格式错误: {}, URL: {}", e.getMessage(), request.getRequestURL(), e);
+        
+        // 处理JsonTypeInfo类型错误
+        Throwable cause = e.getCause();
+        if (cause instanceof InvalidTypeIdException invalidTypeIdException) {
+            String typeId = invalidTypeIdException.getTypeId();
+            // 从PluginConfig获取错误消息
+            if (invalidTypeIdException.getBaseType().getRawClass().equals(PluginConfig.class)) {
+                return Result.badRequest(PluginConfig.getInvalidTypeMessage(typeId));
+            }
+        }
+        
+        return Result.badRequest("请求体格式错误或缺失，请检查请求内容");
     }
 
     /**

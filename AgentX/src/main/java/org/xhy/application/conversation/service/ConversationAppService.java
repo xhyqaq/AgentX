@@ -1,16 +1,15 @@
 package org.xhy.application.conversation.service;
 
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
-import dev.langchain4j.model.output.TokenUsage;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.xhy.application.conversation.assembler.MessageAssembler;
 import org.xhy.application.conversation.dto.ChatRequest;
-import org.xhy.application.conversation.dto.StreamChatRequest;
-import org.xhy.application.conversation.dto.StreamChatResponse;
 import org.xhy.application.conversation.dto.MessageDTO;
+import org.xhy.application.conversation.dto.StreamChatResponse;
 import org.xhy.domain.agent.model.AgentEntity;
 import org.xhy.domain.agent.model.AgentWorkspaceEntity;
 import org.xhy.domain.agent.service.AgentDomainService;
@@ -28,10 +27,10 @@ import org.xhy.infrastructure.llm.LLMProviderService;
 import org.xhy.infrastructure.llm.config.ProviderConfig;
 import org.xhy.infrastructure.llm.protocol.enums.ProviderProtocol;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.BiConsumer;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
+import dev.langchain4j.model.output.TokenUsage;
 
 /**
  * 对话应用服务，用于适配域层的对话服务
